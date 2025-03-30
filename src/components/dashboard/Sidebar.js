@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Sidebar = () => {
   const location = useLocation();
   const [darkMode, setDarkMode] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+  
+  useEffect(() => {
+    // Lấy user role từ localStorage khi component được mount
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    setUserRole(user.role);
+  }, []);
+  
+  const isAdminOrManager = () => {
+    return userRole === 'Admin' || userRole === 'Manager';
+  };
   
   const menuItems = [
     { title: 'Dashboard', icon: 'dashboard', path: '/dashboard' },
@@ -13,7 +24,16 @@ const Sidebar = () => {
     { title: 'Payroll', icon: 'payments', path: '/payroll' },
     { title: 'Jobs', icon: 'work', path: '/jobs' },
     { title: 'Candidates', icon: 'person_search', path: '/candidates' },
-    { title: 'Leaves', icon: 'event', path: '/leaves' },
+    // Các tùy chọn nghỉ phép mở rộng với submenu
+    { 
+      title: 'Leaves', 
+      icon: 'event', 
+      path: '/leaves',
+      subItems: [
+        { title: 'Leave Request', path: '/leave-request' },
+        ...(isAdminOrManager() ? [{ title: 'Leave Approval', path: '/leave-approval' }] : []),
+      ]
+    },
     { title: 'Holidays', icon: 'beach_access', path: '/holidays' },
     { title: 'Settings', icon: 'settings', path: '/settings' },
   ];
@@ -35,14 +55,47 @@ const Sidebar = () => {
       <nav className="flex-1 overflow-y-auto py-4">
         <ul>
           {menuItems.map((item, index) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || 
+                            (item.subItems && item.subItems.some(subItem => location.pathname === subItem.path));
             return (
-              <li key={index} className={`px-5 py-3 ${isActive ? 'bg-purple-700' : 'hover:bg-gray-700'} transition-colors duration-200`}>
-                <Link to={item.path} className="flex items-center">
-                  <span className={`material-icons mr-3 ${isActive ? 'text-white' : 'text-gray-400'}`}>{item.icon}</span>
-                  <span className={`${isActive ? 'font-medium' : ''}`}>{item.title}</span>
-                  {isActive && <span className="ml-auto h-2 w-2 rounded-full bg-white"></span>}
-                </Link>
+              <li key={index}>
+                {/* Main menu item */}
+                <div className={`px-5 py-3 ${isActive ? 'bg-purple-700' : 'hover:bg-gray-700'} transition-colors duration-200`}>
+                  {item.subItems ? (
+                    // Item with submenu
+                    <div className="flex items-center cursor-pointer">
+                      <span className={`material-icons mr-3 ${isActive ? 'text-white' : 'text-gray-400'}`}>{item.icon}</span>
+                      <span className={`${isActive ? 'font-medium' : ''}`}>{item.title}</span>
+                      {isActive && <span className="ml-auto h-2 w-2 rounded-full bg-white"></span>}
+                    </div>
+                  ) : (
+                    // Regular item without submenu
+                    <Link to={item.path} className="flex items-center">
+                      <span className={`material-icons mr-3 ${isActive ? 'text-white' : 'text-gray-400'}`}>{item.icon}</span>
+                      <span className={`${isActive ? 'font-medium' : ''}`}>{item.title}</span>
+                      {isActive && <span className="ml-auto h-2 w-2 rounded-full bg-white"></span>}
+                    </Link>
+                  )}
+                </div>
+                
+                {/* Submenu items if they exist */}
+                {item.subItems && (
+                  <ul className="pl-12 bg-gray-900">
+                    {item.subItems.map((subItem, subIndex) => {
+                      const isSubActive = location.pathname === subItem.path;
+                      return (
+                        <li key={`${index}-${subIndex}`} className="py-2">
+                          <Link 
+                            to={subItem.path}
+                            className={`text-sm ${isSubActive ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}
+                          >
+                            {subItem.title}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </li>
             );
           })}
