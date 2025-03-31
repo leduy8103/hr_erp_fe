@@ -9,6 +9,11 @@ import {
 import Login from "./components/Login";
 import Dashboard from "./pages/Dashboard";
 import AllEmployees from "./pages/AllEmployee";
+import UserProfilePage from "./pages/UserProfilePage";
+import Project from "./pages/Project";
+import MyTasksPage from "../src/pages/MyTasksPage";
+import Forbiden from "./components/common/Forbiden";
+import authService from "./services/authService";
 import LeaveRequestPage from "./pages/LeaveRequestPage";
 import LeaveApprovalPage from "./pages/LeaveApprovalPage";
 
@@ -20,11 +25,14 @@ function App() {
       try {
         const userData = JSON.parse(userStr);
         console.log("Current user data:", userData);
-        
+
         // Kiểm tra cấu trúc dữ liệu để xác định vai trò
         const role = userData.user?.role || userData.role;
         console.log("Detected user role:", role);
-        console.log("Is admin or manager check:", role === 'Admin' || role === 'Manager');
+        console.log(
+          "Is admin or manager check:",
+          role === "Admin" || role === "Manager"
+        );
       } catch (error) {
         console.error("Error parsing user data:", error);
       }
@@ -38,14 +46,19 @@ function App() {
     console.log("isAuthenticated check result:", isAuth);
     return isAuth;
   };
-  
+
   const hasRole = (role) => {
     try {
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      const userData = JSON.parse(localStorage.getItem("user") || "{}");
       // Cấu trúc có thể là { role } hoặc { user: { role } }
       const userRole = userData.user?.role || userData.role;
       const hasRoleResult = userRole === role;
-      console.log(`hasRole('${role}') check result:`, hasRoleResult, "Detected role:", userRole);
+      console.log(
+        `hasRole('${role}') check result:`,
+        hasRoleResult,
+        "Detected role:",
+        userRole
+      );
       return hasRoleResult;
     } catch (error) {
       console.error("Error in hasRole:", error);
@@ -55,11 +68,17 @@ function App() {
 
   const isAdminOrManager = () => {
     try {
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      const userData = JSON.parse(localStorage.getItem("user") || "{}");
       // Cấu trúc có thể là { role } hoặc { user: { role } }
       const userRole = userData.user?.role || userData.role;
-      const isAdminManagerResult = userRole === 'Admin' || userRole === 'Manager';
-      console.log("isAdminOrManager check result:", isAdminManagerResult, "Detected role:", userRole);
+      const isAdminManagerResult =
+        userRole === "Admin" || userRole === "Manager";
+      console.log(
+        "isAdminOrManager check result:",
+        isAdminManagerResult,
+        "Detected role:",
+        userRole
+      );
       return isAdminManagerResult;
     } catch (error) {
       console.error("Error in isAdminOrManager:", error);
@@ -75,7 +94,10 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              isAuthenticated() ? <Dashboard /> : <Navigate to="/login" />
+              <ProtectedRoute
+                element={<Dashboard />}
+                requiredRoles={["Admin", "Manager", "Account", "Employee"]}
+              />
             }
           />
           <Route
@@ -87,13 +109,21 @@ function App() {
           <Route
             path="/leave-request"
             element={
-              isAuthenticated() ? <LeaveRequestPage /> : <Navigate to="/login" />
+              isAuthenticated() ? (
+                <LeaveRequestPage />
+              ) : (
+                <Navigate to="/login" />
+              )
             }
           />
           <Route
             path="/leave-approval"
             element={
-              isAuthenticated() && isAdminOrManager() ? <LeaveApprovalPage /> : <Navigate to="/dashboard" />
+              isAuthenticated() && isAdminOrManager() ? (
+                <LeaveApprovalPage />
+              ) : (
+                <Navigate to="/dashboard" />
+              )
             }
           />
           <Route
