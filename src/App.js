@@ -14,6 +14,8 @@ import Project from "./pages/Project";
 import MyTasksPage from "../src/pages/MyTasksPage";
 import Forbiden from "./components/common/Forbiden";
 import authService from "./services/authService";
+import LeaveRequestPage from "./pages/LeaveRequestPage";
+import LeaveApprovalPage from "./pages/LeaveApprovalPage";
 
 function App() {
   const isAuthenticated = () => authService.isAuthenticated();
@@ -57,6 +59,26 @@ function App() {
     return element;
   };
 
+  const isAdminOrManager = () => {
+    try {
+      const userData = JSON.parse(localStorage.getItem("user") || "{}");
+      // Cấu trúc có thể là { role } hoặc { user: { role } }
+      const userRole = userData.user?.role || userData.role;
+      const isAdminManagerResult =
+        userRole === "Admin" || userRole === "Manager";
+      console.log(
+        "isAdminOrManager check result:",
+        isAdminManagerResult,
+        "Detected role:",
+        userRole
+      );
+      return isAdminManagerResult;
+    } catch (error) {
+      console.error("Error in isAdminOrManager:", error);
+      return false;
+    }
+  };
+
   return (
     <Router>
       <div className="App">
@@ -78,6 +100,32 @@ function App() {
                 element={<AllEmployees />}
                 requiredRoles={["Admin"]}
               />
+            }
+          />
+          <Route
+            path="/leave-request"
+            element={
+              isAuthenticated() ? (
+                <LeaveRequestPage />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/leave-approval"
+            element={
+              isAuthenticated() && isAdminOrManager() ? (
+                <LeaveApprovalPage />
+              ) : (
+                <Navigate to="/dashboard" />
+              )
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <Navigate to={isAuthenticated() ? "/dashboard" : "/login"} />
             }
           />
           <Route

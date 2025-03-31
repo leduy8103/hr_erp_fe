@@ -120,6 +120,16 @@ const EmployeeTable = () => {
     }
   };
 
+  const handleBlockUser = async (employee) => {
+    try {
+      await employeeService.blockUser(employee.id);
+      // Refresh the data to show the updated blocked status
+      await fetchData();
+    } catch (error) {
+      console.error("Error blocking/unblocking user:", error);
+    }
+  };
+
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -203,6 +213,9 @@ const EmployeeTable = () => {
                 Status
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Blocked
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Action
               </th>
             </tr>
@@ -210,7 +223,7 @@ const EmployeeTable = () => {
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                <td colSpan="8" className="px-4 py-8 text-center text-gray-500">
                   Loading employees...
                 </td>
               </tr>
@@ -272,12 +285,33 @@ const EmployeeTable = () => {
                     </span>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        employee.is_blocked
+                          ? "bg-red-100 text-red-800"
+                          : "bg-green-100 text-green-800"
+                      }`}>
+                      {employee.is_blocked ? "Blocked" : "Active"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex space-x-2">
                       {isAdmin && (
                         <button
                           className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition duration-200"
                           onClick={() => handleEditEmployee(employee)}>
                           Edit
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <button
+                          className={`px-3 py-1 ${
+                            employee.is_blocked
+                              ? "bg-green-600 hover:bg-green-700"
+                              : "bg-orange-600 hover:bg-orange-700"
+                          } text-white text-sm rounded-md transition duration-200`}
+                          onClick={() => handleBlockUser(employee)}>
+                          {employee.is_blocked ? "Unblock" : "Block"}
                         </button>
                       )}
                       {isAdmin && (
@@ -296,7 +330,7 @@ const EmployeeTable = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                <td colSpan="8" className="px-4 py-8 text-center text-gray-500">
                   No employees found matching your search criteria.
                 </td>
               </tr>
