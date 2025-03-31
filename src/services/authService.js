@@ -58,6 +58,15 @@ const getUserIdFromToken = () => {
   return decodedToken ? decodedToken.id || decodedToken.userId || decodedToken.sub : null;
 };
 
+// Get the user role from token
+const getUserRole = () => {
+  const token = getToken();
+  if (!token) return null;
+  
+  const decodedToken = decodeToken(token);
+  return decodedToken ? decodedToken.role || 'employee' : 'employee';
+};
+
 const authService = {
   login,
   logout,
@@ -65,7 +74,8 @@ const authService = {
   getToken,
   isAuthenticated,
   decodeToken,
-  getUserIdFromToken
+  getUserIdFromToken,
+  getUserRole
 };
 
 export default authService;
