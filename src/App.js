@@ -9,6 +9,7 @@ import {
 import Login from "./components/Login";
 import Dashboard from "./pages/Dashboard";
 import AllEmployees from "./pages/AllEmployee";
+import AttendancePage from "./pages/Attendance";
 
 function App() {
   const isAuthenticated = () => !!localStorage.getItem("user"); // Using user from localStorage
@@ -34,6 +35,12 @@ function App() {
             path="/"
             element={
               <Navigate to={isAuthenticated() ? "/dashboard" : "/login"} />
+            }
+          />
+          <Route
+            path="/attendance"
+            element={
+              isAuthenticated() ? <AttendancePage /> : <Navigate to="/login" />
             }
           />
           <Route path="*" element={<Navigate to="/" />} />
