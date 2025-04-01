@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AddEmployeeModal from './AddEmployeeModal';
+import AddPerformanceReviewModal from './AddPerformanceReviewModal';
 import FilterModal from './FilterModal';
 import employeeService from '../../services/employeeService';
 import authService from "../../services/authService"; // Assuming this service exists
@@ -9,6 +10,7 @@ const EmployeeTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage, setRecordsPerPage] = useState(10);
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
+  const [isAddPerformanceReviewModalOpen, setIsAddPerformanceReviewModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [filters, setFilters] = useState({});
   const [employees, setEmployees] = useState([]);
@@ -50,9 +52,12 @@ const EmployeeTable = () => {
 
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
-    // Apply the filters to your employee data here
   };
 
+  const handleEvaluateClick = (userId) => {
+    setSelectedUserId(userId); // Lưu user_id của user được chọn
+    setIsAddPerformanceReviewModalOpen(true); // Mở modal
+  };
   // Filter employees based on search term and filters
   const filteredEmployees = employees.filter(
     (employee) =>
@@ -383,7 +388,11 @@ const EmployeeTable = () => {
         onSubmit={handleSaveEmployee}
         isEditMode={!!editingEmployee}
       />
-
+      <AddPerformanceReviewModal
+       isOpen={isAddPerformanceReviewModalOpen}
+       onRequestClose={() => setIsAddPerformanceReviewModalOpen(false)}
+       userId={selectedUserId} 
+      />
       <FilterModal
         isOpen={isFilterModalOpen}
         onRequestClose={() => setIsFilterModalOpen(false)}

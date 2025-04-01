@@ -46,7 +46,6 @@ const AddEmployeeModal = ({
       [name]: value,
     });
   };
-
   const handleFileChange = (name, file) => {
     setFormData({
       ...formData,
@@ -76,7 +75,6 @@ const AddEmployeeModal = ({
       });
     }
   };
-
   const handleNext = (e) => {
     e.preventDefault();
     e.stopPropagation();
