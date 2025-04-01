@@ -45,6 +45,7 @@ const EmployeeTable = () => {
       setLoading(false);
     }
   };
+  const [selectedUserId, setSelectedUserId] = useState(null); // Thêm state để lưu user_id
 
   useEffect(() => {
     fetchData();
@@ -301,6 +302,11 @@ const EmployeeTable = () => {
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex space-x-2">
+                      <button
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition duration-200"
+                        onClick={() => handleEvaluateClick(employee.id)}>
+                        Evaluate
+                      </button>
                       {isAdmin && (
                         <button
                           className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition duration-200"
@@ -389,9 +395,9 @@ const EmployeeTable = () => {
         isEditMode={!!editingEmployee}
       />
       <AddPerformanceReviewModal
-       isOpen={isAddPerformanceReviewModalOpen}
-       onRequestClose={() => setIsAddPerformanceReviewModalOpen(false)}
-       userId={selectedUserId} 
+        isOpen={isAddPerformanceReviewModalOpen}
+        onRequestClose={() => setIsAddPerformanceReviewModalOpen(false)}
+        userId={selectedUserId}
       />
       <FilterModal
         isOpen={isFilterModalOpen}
