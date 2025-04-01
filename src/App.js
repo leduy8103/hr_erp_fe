@@ -16,6 +16,7 @@ import Forbiden from "./components/common/Forbiden";
 import authService from "./services/authService";
 import LeaveRequestPage from "./pages/LeaveRequestPage";
 import LeaveApprovalPage from "./pages/LeaveApprovalPage";
+import AttendancePage from "./pages/Attendance";
 
 function App() {
   const isAuthenticated = () => authService.isAuthenticated();
@@ -160,6 +161,12 @@ function App() {
             path="/"
             element={
               <Navigate to={isAuthenticated() ? "/dashboard" : "/login"} />
+            }
+          />
+          <Route
+            path="/attendance"
+            element={
+              isAuthenticated() ? <AttendancePage /> : <Navigate to="/login" />
             }
           />
           <Route path="*" element={<Navigate to="/" />} />
