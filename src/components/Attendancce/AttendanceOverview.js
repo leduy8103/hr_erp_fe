@@ -21,12 +21,15 @@ const AttendanceOverview = () => {
     setError(null);
     
     try {
-      const response = await axios.get(`http://localhost:3000/attendance/user`, {
-        headers: {
-          'Authorization': `Bearer ${authService.getToken()}`,
-          'Content-Type': 'application/json'
+      const response = await axios.get(
+        `http://localhost:3000/api/attendance/user`,
+        {
+          headers: {
+            Authorization: `Bearer ${authService.getToken()}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
       
       if (response.data && response.data.success) {
         console.log('Attendance data:', response.data);
