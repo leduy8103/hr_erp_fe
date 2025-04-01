@@ -16,6 +16,9 @@ import Forbiden from "./components/common/Forbiden";
 import authService from "./services/authService";
 import LeaveRequestPage from "./pages/LeaveRequestPage";
 import LeaveApprovalPage from "./pages/LeaveApprovalPage";
+import PayrollPage from "./pages/PayrollPage";
+import ChatBox from './components/ChatBox';
+
 
 function App() {
   // Debug: Log user info to check if role is correctly saved
@@ -85,6 +88,17 @@ function App() {
       return false;
     }
   };
+  
+  const isAdminOrAccountant = () => {
+    try {
+      const userData = JSON.parse(localStorage.getItem("user") || "{}");
+      const userRole = userData.user?.role || userData.role;
+      return userRole === "Admin" || userRole === "Accountant";
+    } catch (error) {
+      console.error("Error in isAdminOrAccountant:", error);
+      return false;
+    }
+  };
 
   return (
     <Router>
@@ -94,10 +108,7 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute
-                element={<Dashboard />}
-                requiredRoles={["Admin", "Manager", "Account", "Employee"]}
-              />
+              isAuthenticated() ? <Dashboard /> : <Navigate to="/login" />
             }
           />
           <Route
@@ -127,6 +138,16 @@ function App() {
             }
           />
           <Route
+            path="/payroll"
+            element={
+              isAuthenticated() ? (
+                <PayrollPage />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
             path="/"
             element={
               <Navigate to={isAuthenticated() ? "/dashboard" : "/login"} />
@@ -134,6 +155,7 @@ function App() {
           />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
+        <ChatBox />
       </div>
     </Router>
   );

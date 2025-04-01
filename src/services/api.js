@@ -1,6 +1,8 @@
+
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000'; // Replace with your HR ERP API
+// Sửa lại baseURL phù hợp
+const API_URL = 'http://localhost:3000'; // Địa chỉ server của bạn
 
 const api = axios.create({
   baseURL: API_URL,
