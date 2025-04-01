@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AddEmployeeModal from './AddEmployeeModal';
+import AddPerformanceReviewModal from './AddPerformanceReviewModal';
 import FilterModal from './FilterModal';
 import employeeService from '../../services/employeeService';
 
@@ -8,10 +9,12 @@ const EmployeeTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage, setRecordsPerPage] = useState(10);
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
+  const [isAddPerformanceReviewModalOpen, setIsAddPerformanceReviewModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [filters, setFilters] = useState({});
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUserId, setSelectedUserId] = useState(null); // Thêm state để lưu user_id
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -30,9 +33,12 @@ const EmployeeTable = () => {
 
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
-    // Apply the filters to your employee data here
   };
 
+  const handleEvaluateClick = (userId) => {
+    setSelectedUserId(userId); // Lưu user_id của user được chọn
+    setIsAddPerformanceReviewModalOpen(true); // Mở modal
+  };
   // Filter employees based on search term and filters
   const filteredEmployees = employees.filter(employee => 
     (employee.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -154,7 +160,11 @@ const EmployeeTable = () => {
                     </span>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-3">
+                      <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition duration-200"
+                      onClick={() => handleEvaluateClick(employee.id)}>
+                        Evaluate
+                      </button>
                       <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition duration-200">
                         Edit
                       </button>
@@ -217,7 +227,11 @@ const EmployeeTable = () => {
         isOpen={isAddEmployeeModalOpen}
         onRequestClose={() => setIsAddEmployeeModalOpen(false)}
       />
-
+      <AddPerformanceReviewModal
+       isOpen={isAddPerformanceReviewModalOpen}
+       onRequestClose={() => setIsAddPerformanceReviewModalOpen(false)}
+       userId={selectedUserId} 
+      />
       <FilterModal
         isOpen={isFilterModalOpen}
         onRequestClose={() => setIsFilterModalOpen(false)}

@@ -16,17 +16,7 @@ const initialFormState = {
   position: '',
   hire_date: '',
   status: 'Active',
-  role: 'Employee',
-  
-  // Account Info
-  email: '',
-  password: '',
-  
-  // Upload Files
-  // profilePicture: null,
-  // resume: null,
-  // idProof: null,
-  // certificates: []
+
 };
 
 const tabs = [
@@ -46,7 +36,6 @@ const AddEmployeeModal = ({ isOpen, onRequestClose }) => {
       [name]: value
     });
   };
-
   const handleFileChange = (name, file) => {
     setFormData({
       ...formData,
@@ -76,7 +65,6 @@ const AddEmployeeModal = ({ isOpen, onRequestClose }) => {
       });
     }
   };
-
   // Inside your component
   const handleNext = (e) => {
     // Add this to prevent any default behavior or propagation
