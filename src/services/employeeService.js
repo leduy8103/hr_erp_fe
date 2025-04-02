@@ -160,6 +160,20 @@ const getManagers = async () => {
   }
 };
 
+// Block user functionality
+const blockUser = async (id) => {
+  try {
+    const response = await api.put(`/api/user/${id}/block`);
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error blocking user ${id}:`,
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
 const employeeService = {
   addEmployee,
   getEmployees,
@@ -172,6 +186,7 @@ const employeeService = {
   findEmployeeByEmail,
   getEmployeesByRole,
   getManagers,
+  blockUser, // Add the new function to the exported object
 };
 
 export default employeeService;

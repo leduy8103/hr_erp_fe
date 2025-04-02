@@ -3,13 +3,11 @@ import BaseModal from "./BaseModal";
 import TabNavigation from "./TabNavigation";
 import EmployeeInfoForm from "./EmployeeInfoForm";
 import AccountInfoForm from "./AccountInfoForm";
-import UploadFilesForm from "./UploadFilesForm";
 import employeeService from "../../services/employeeService";
 
 const tabs = [
   { id: "employee", label: "Employee Information" },
   { id: "account", label: "Account Access" },
-  { id: "upload", label: "Upload Files" },
 ];
 
 const AddEmployeeModal = ({
@@ -21,6 +19,7 @@ const AddEmployeeModal = ({
 }) => {
   const [activeTab, setActiveTab] = useState("employee");
   const [formData, setFormData] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     console.log("Modal props changed:", {
@@ -47,49 +46,18 @@ const AddEmployeeModal = ({
     });
   };
 
-  const handleFileChange = (name, file) => {
-    setFormData({
-      ...formData,
-      [name]: file,
-    });
-  };
-
-  const handleMultipleFileChange = (name, files) => {
-    setFormData({
-      ...formData,
-      [name]: [...(formData[name] || []), ...files],
-    });
-  };
-
-  const handleRemoveFile = (name, fileIndex) => {
-    if (Array.isArray(formData[name])) {
-      const updatedFiles = [...formData[name]];
-      updatedFiles.splice(fileIndex, 1);
-      setFormData({
-        ...formData,
-        [name]: updatedFiles,
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: null,
-      });
-    }
-  };
-
   const handleNext = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (activeTab === "employee") {
       setActiveTab("account");
-    } else if (activeTab === "account") {
-      setActiveTab("upload");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       if (isEditMode) {
         // Update employee
@@ -97,28 +65,6 @@ const AddEmployeeModal = ({
       } else {
         // Add new employee
         const newEmployee = await employeeService.addEmployee(formData);
-
-        // Upload files after adding the employee
-        if (formData.profilePicture) {
-          await employeeService.uploadFile(newEmployee.id, {
-            profilePicture: formData.profilePicture,
-          });
-        }
-        if (formData.resume) {
-          await employeeService.uploadFile(newEmployee.id, {
-            resume: formData.resume,
-          });
-        }
-        if (formData.idProof) {
-          await employeeService.uploadFile(newEmployee.id, {
-            idProof: formData.idProof,
-          });
-        }
-        if (formData.certificates && formData.certificates.length > 0) {
-          await employeeService.uploadFile(newEmployee.id, {
-            certificates: formData.certificates,
-          });
-        }
 
         await onSubmit(newEmployee);
       }
@@ -128,6 +74,8 @@ const AddEmployeeModal = ({
       onRequestClose();
     } catch (error) {
       console.error("Error saving employee:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -161,34 +109,53 @@ const AddEmployeeModal = ({
           />
         )}
 
-        {activeTab === "upload" && (
-          <UploadFilesForm
-            formData={formData}
-            onFileChange={handleFileChange}
-            onMultipleFileChange={handleMultipleFileChange}
-            onRemoveFile={handleRemoveFile}
-          />
-        )}
-
         <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
           <button
             type="button"
             className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-            onClick={onRequestClose}>
+            onClick={onRequestClose}
+            disabled={isSubmitting}>
             Cancel
           </button>
-          {activeTab !== "upload" ? (
+          {activeTab === "employee" ? (
             <button
               type="button"
               onClick={handleNext}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={isSubmitting}>
               Next
             </button>
           ) : (
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-              {isEditMode ? "Update" : "Submit"}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 flex items-center"
+              disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : isEditMode ? (
+                "Update"
+              ) : (
+                "Submit"
+              )}
             </button>
           )}
         </div>
