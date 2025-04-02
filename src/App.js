@@ -1,5 +1,5 @@
 // filepath: d:\React\hr-erp-frontend\src\App.js
-import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -17,47 +17,88 @@ import authService from "./services/authService";
 import LeaveRequestPage from "./pages/LeaveRequestPage";
 import LeaveApprovalPage from "./pages/LeaveApprovalPage";
 import AttendancePage from "./pages/Attendance";
+import PayrollPage from "./pages/PayrollPage";
+import ChatBox from './components/ChatBox';
+
 
 function App() {
-  const isAuthenticated = () => authService.isAuthenticated();
+  // Debug: Log user info to check if role is correctly saved
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        console.log("Current user data:", userData);
 
-  // Helper function to check if user has required role
-  const hasRole = (requiredRoles) => {
-    if (!isAuthenticated()) return false;
+        // Kiểm tra cấu trúc dữ liệu để xác định vai trò
+        const role = userData.user?.role || userData.role;
+        console.log("Detected user role:", role);
+        console.log(
+          "Is admin or manager check:",
+          role === "Admin" || role === "Manager"
+        );
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    } else {
+      console.log("No user data in localStorage");
+    }
+  }, []);
 
+  const isAuthenticated = () => {
+    const isAuth = !!localStorage.getItem("user");
+    console.log("isAuthenticated check result:", isAuth);
+    return isAuth;
+  };
+
+  const hasRole = (role) => {
     try {
-      const userRole = authService.getUserRole() || "Employee";
-
-      // Case insensitive role checking
-      return requiredRoles.some(
-        (role) => role.toLowerCase() === userRole.toLowerCase()
+      const userData = JSON.parse(localStorage.getItem("user") || "{}");
+      // Cấu trúc có thể là { role } hoặc { user: { role } }
+      const userRole = userData.user?.role || userData.role;
+      const hasRoleResult = userRole === role;
+      console.log(
+        `hasRole('${role}') check result:`,
+        hasRoleResult,
+        "Detected role:",
+        userRole
       );
+      return hasRoleResult;
     } catch (error) {
-      console.error("Error checking user role:", error);
+      console.error("Error in hasRole:", error);
       return false;
     }
   };
 
-  // ProtectedRoute component with role checking
-  const ProtectedRoute = ({
-    element,
-    requiredRoles = ["Admin", "Manager", "Account", "Employee"],
-  }) => {
-    if (!isAuthenticated()) {
-      return <Navigate to="/login" />;
+  // const isAdminOrManager = () => {
+  //   try {
+  //     const userData = JSON.parse(localStorage.getItem("user") || "{}");
+  //     // Cấu trúc có thể là { role } hoặc { user: { role } }
+  //     const userRole = userData.user?.role || userData.role;
+  //     const isAdminManagerResult =
+  //       userRole === "Admin" || userRole === "Manager";
+  //     console.log(
+  //       "isAdminOrManager check result:",
+  //       isAdminManagerResult,
+  //       "Detected role:",
+  //       userRole
+  //     );
+  //     return isAdminManagerResult;
+  //   } catch (error) {
+  //     console.error("Error in isAdminOrManager:", error);
+  //     return false;
+  //   }
+  // };
+  
+  const isAdminOrAccountant = () => {
+    try {
+      const userData = JSON.parse(localStorage.getItem("user") || "{}");
+      const userRole = userData.user?.role || userData.role;
+      return userRole === "Admin" || userRole === "Accountant";
+    } catch (error) {
+      console.error("Error in isAdminOrAccountant:", error);
+      return false;
     }
-
-    if (!hasRole(requiredRoles)) {
-      return (
-        <Forbiden
-          message={`You need ${requiredRoles.join(
-            " or "
-          )} role to access this page`}
-        />
-      );
-    }
-
-    return element;
   };
 
   const isAdminOrManager = () => {
@@ -88,19 +129,19 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute
-                element={<Dashboard />}
-                requiredRoles={["Admin", "Manager", "Account", "Employee"]}
-              />
+              isAuthenticated() ? <Dashboard /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/my-tasks"
+            element={
+              isAuthenticated() ? <MyTasksPage /> : <Navigate to="/login" />
             }
           />
           <Route
             path="/employees"
             element={
-              <ProtectedRoute
-                element={<AllEmployees />}
-                requiredRoles={["Admin"]}
-              />
+              isAuthenticated() ? <AllEmployees /> : <Navigate to="/login" />
             }
           />
           <Route
@@ -132,35 +173,51 @@ function App() {
           <Route
             path="/projects/*"
             element={
-              <ProtectedRoute
-                element={<Project />}
-                requiredRoles={["Admin", "Manager"]}
-              />
+              isAuthenticated() ? (
+                <Project />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/leave-approval"
+            element={
+              isAuthenticated() && isAdminOrManager() ? (
+                <LeaveApprovalPage />
+              ) : (
+                <Navigate to="/dashboard" />
+              )
+            }
+          />
+          <Route
+            path="/payroll"
+            element={
+              isAuthenticated() ? (
+                <PayrollPage />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              isAuthenticated() ? (
+                <UserProfilePage />
+              ) : (
+                <Navigate to="/login" />
+              )
             }
           />
           <Route
             path="/profile/:id"
             element={
-              <ProtectedRoute
-                element={<UserProfilePage />}
-                requiredRoles={["Admin", "Manager", "Account", "Employee"]}
-              />
-            }
-          />
-          <Route
-            path="/my-tasks"
-            element={
-              <ProtectedRoute
-                element={<MyTasksPage />}
-                requiredRoles={["Employee", "Manager"]}
-              />
-            }
-          />
-          <Route path="/forbidden" element={<Forbiden />} />
-          <Route
-            path="/"
-            element={
-              <Navigate to={isAuthenticated() ? "/dashboard" : "/login"} />
+              isAuthenticated() ? (
+                <UserProfilePage />
+              ) : (
+                <Navigate to="/login" />
+              )
             }
           />
           <Route
@@ -171,6 +228,7 @@ function App() {
           />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
+        <ChatBox />
       </div>
     </Router>
   );

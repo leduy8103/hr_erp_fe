@@ -69,7 +69,7 @@ const EmployeeTable = () => {
       (!filters.selectedDepartments ||
         filters.selectedDepartments.length === 0 ||
         filters.selectedDepartments.includes(employee.department)) &&
-      (!filters.selectedType || filters.selectedType === employee.type)
+      (!filters.selectedrole || filters.selectedrole === employee.role)
   );
 
   // Get status badge class based on status
@@ -137,20 +137,20 @@ const EmployeeTable = () => {
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md">
+    <div className="p-6 bg-white rounded-xl shadow-lg">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-semibold text-gray-800">All Employees</h1>
+        <h1 className="text-2xl font-bold text-gray-800">All Employees</h1>
         <div className="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto">
           <div className="relative w-full md:w-64">
             <input
-              type="text"
+              role="text"
               placeholder="Search employees..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
             />
             <svg
-              className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
+              className="absolute right-3 top-3 h-5 w-5 text-gray-400"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor">
@@ -162,7 +162,7 @@ const EmployeeTable = () => {
             </svg>
           </div>
           <button
-            className="w-full md:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200 flex items-center justify-center"
+            className="w-full md:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition duration-200 ease-in-out transform hover:scale-105 flex items-center justify-center shadow-md"
             onClick={() => setIsAddEmployeeModalOpen(true)}>
             <svg
               className="h-5 w-5 mr-2"
@@ -178,7 +178,7 @@ const EmployeeTable = () => {
             Add New Employee
           </button>
           <button
-            className="w-full md:w-auto px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-md transition duration-200 flex items-center justify-center"
+            className="w-full md:w-auto px-4 py-2.5 border border-gray-300 hover:bg-gray-50 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 flex items-center justify-center shadow-sm"
             onClick={() => setIsFilterModalOpen(true)}>
             <svg
               className="h-5 w-5 mr-2 text-gray-500"
@@ -196,49 +196,72 @@ const EmployeeTable = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white">
+      <div className="overflow-x-auto rounded-xl shadow-md">
+        <table className="min-w-full bg-white border-collapse">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Employee Name
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Employee ID
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Department
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Designation
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Type
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                role
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Blocked
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Action
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 bg-white">
             {loading ? (
               <tr>
-                <td colSpan="8" className="px-4 py-8 text-center text-gray-500">
-                  Loading employees...
+                <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                  <div className="flex justify-center items-center">
+                    <svg
+                      className="animate-spin h-8 w-8 text-blue-500 mr-2"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="text-lg font-medium">
+                      Loading employees...
+                    </span>
+                  </div>
                 </td>
               </tr>
             ) : filteredEmployees.length > 0 ? (
               filteredEmployees.map((employee, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-4 py-4 whitespace-nowrap">
+                <tr
+                  key={index}
+                  className="hover:bg-gray-50 transition-colors duration-150">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
+                      <div className="flex-shrink-0 h-12 w-12">
                         {employee.avatarURL ? (
                           <img
                             src={employee.avatarURL}
@@ -247,10 +270,10 @@ const EmployeeTable = () => {
                               e.target.onerror = null;
                               e.target.src = `https://ui-avatars.com/api/?name=${employee.full_name}&background=random`;
                             }}
-                            className="h-10 w-10 rounded-full object-cover"
+                            className="h-12 w-12 rounded-full object-cover border-2 border-gray-200 shadow-sm"
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
+                          <div className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold shadow-sm">
                             {employee.full_name
                               .split(" ")
                               .map((name) => name[0])
@@ -260,39 +283,44 @@ const EmployeeTable = () => {
                         )}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-semibold text-gray-900">
                           {employee.full_name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {employee.email || "No email provided"}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{employee.id}</div>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {employee.id}
+                    </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
                       {employee.department}
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
                       {employee.position}
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{employee.type}</div>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{employee.role}</div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(
+                      className={`px-3 py-1.5 inline-flex items-center justify-center text-xs font-medium rounded-full ${getStatusBadgeClass(
                         employee.status
                       )}`}>
                       {employee.status}
                     </span>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      className={`px-3 py-1.5 inline-flex items-center justify-center text-xs font-medium rounded-full ${
                         employee.is_blocked
                           ? "bg-red-100 text-red-800"
                           : "bg-green-100 text-green-800"
@@ -300,38 +328,83 @@ const EmployeeTable = () => {
                       {employee.is_blocked ? "Blocked" : "Active"}
                     </span>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex space-x-2">
                       <button
-                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition duration-200"
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition duration-200 flex items-center"
                         onClick={() => handleEvaluateClick(employee.id)}>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 mr-1"
+                          viewBox="0 0 20 20"
+                          fill="currentColor">
+                          <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                          <path
+                            fillRule="evenodd"
+                            d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
                         Evaluate
                       </button>
                       {isAdmin && (
                         <button
-                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition duration-200"
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition duration-200 flex items-center"
                           onClick={() => handleEditEmployee(employee)}>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mr-1"
+                            viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                          </svg>
                           Edit
                         </button>
                       )}
                       {isAdmin && (
                         <button
-                          className={`px-3 py-1 ${
+                          className={`px-3 py-1.5 ${
                             employee.is_blocked
                               ? "bg-green-600 hover:bg-green-700"
                               : "bg-orange-600 hover:bg-orange-700"
-                          } text-white text-sm rounded-md transition duration-200`}
+                          } text-white text-sm rounded-lg transition duration-200 flex items-center`}
                           onClick={() => handleBlockUser(employee)}>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mr-1"
+                            viewBox="0 0 20 20"
+                            fill="currentColor">
+                            {employee.is_blocked ? (
+                              <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z" />
+                            ) : (
+                              <path
+                                fillRule="evenodd"
+                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                clipRule="evenodd"
+                              />
+                            )}
+                          </svg>
                           {employee.is_blocked ? "Unblock" : "Block"}
                         </button>
                       )}
                       {isAdmin && (
-                        <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-md transition duration-200">
+                        <button className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition duration-200 flex items-center">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mr-1"
+                            viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path
+                              fillRule="evenodd"
+                              d="M10 2a1 1 0 00-1 1v1H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1h-4V3a1 1 0 00-1-1zm-3 5a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1H8a1 1 0 01-1-1V7z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
                           Remove
                         </button>
                       )}
                       {!isAdmin && (
-                        <button className="px-3 py-1 bg-gray-200 text-gray-500 text-sm rounded-md cursor-not-allowed">
+                        <button className="px-3 py-1.5 bg-gray-200 text-gray-500 text-sm rounded-lg cursor-not-allowed">
                           No Permission
                         </button>
                       )}
@@ -341,7 +414,7 @@ const EmployeeTable = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="8" className="px-4 py-8 text-center text-gray-500">
+                <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                   No employees found matching your search criteria.
                 </td>
               </tr>
@@ -354,7 +427,7 @@ const EmployeeTable = () => {
         <div className="text-sm text-gray-700">
           <span>Showing </span>
           <select
-            className="border rounded-md px-2 py-1 mx-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="border rounded-md px-2 py-1.5 mx-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             value={recordsPerPage}
             onChange={(e) => setRecordsPerPage(Number(e.target.value))}>
             <option value={10}>10</option>
@@ -370,19 +443,43 @@ const EmployeeTable = () => {
 
         <div className="inline-flex rounded-md shadow">
           <button
-            className="px-2 py-1 border border-gray-300 bg-white text-sm font-medium rounded-l-md text-gray-700 hover:bg-gray-50"
+            className="px-4 py-2 border border-gray-300 bg-white text-sm font-medium rounded-l-lg text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out"
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}>
-            Previous
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
           </button>
-          <button className="px-2 py-1 border-t border-b border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+          <button className="px-4 py-2 border-t border-b border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
             {currentPage}
           </button>
           <button
-            className="px-2 py-1 border border-gray-300 bg-white text-sm font-medium rounded-r-md text-gray-700 hover:bg-gray-50"
+            className="px-4 py-2 border border-gray-300 bg-white text-sm font-medium rounded-r-lg text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out"
             onClick={() => setCurrentPage(currentPage + 1)}
             disabled={currentPage * recordsPerPage >= filteredEmployees.length}>
-            Next
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </button>
         </div>
       </div>

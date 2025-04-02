@@ -57,14 +57,14 @@ const EmployeeProfile = ({ isDarkMode }) => {
   return (
     <div>
       {/* Breadcrumb */}
-      <div className="text-sm text-gray-500 mb-4">
+      {/* <div className="text-sm text-gray-500 mb-4">
         <span
           className="cursor-pointer hover:underline"
           onClick={() => navigate("/employees")}>
           All Employee
         </span>{" "}
         {">"} {profile.firstName} {profile.lastName}
-      </div>
+      </div> */}
 
       {/* Profile Header */}
       <div className="flex justify-between items-center mb-6">
