@@ -36,6 +36,8 @@ const ProjectList = () => {
   });
   const navigate = useNavigate();
   const token = authService.getToken();
+  const userRole = authService.getUserRole();
+  const isAdmin = userRole === "Admin" || userRole === "admin";
 
   // Set current user once
   useEffect(() => {
@@ -333,7 +335,7 @@ const ProjectList = () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-4 sm:mb-0">
           Projects Dashboard
         </h1>
-        {(currentUser?.role === "Admin" || currentUser?.role === "Manager") && (
+        {isAdmin && (
           <button
             className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
             onClick={handleCreateProject}>

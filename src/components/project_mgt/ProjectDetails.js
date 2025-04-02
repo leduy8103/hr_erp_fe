@@ -123,27 +123,17 @@ const ProjectDetails = () => {
     }
   };
 
-  // Get priority class
-  const getPriorityClass = (priority) => {
-    switch (priority?.toLowerCase()) {
-      case "high":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "low":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
   // Navigate back to projects list
   const handleBack = () => {
     navigate("/projects");
   };
 
-  // Navigate to edit project
+  // Handle project edit
   const handleEdit = () => {
+    if (!isAdmin) {
+      alert("Only administrators can edit projects.");
+      return;
+    }
     setShowEditModal(true);
   };
 
@@ -172,13 +162,13 @@ const ProjectDetails = () => {
       name: project.name,
       description: project.description,
       manager_id: project.manager_id ? project.manager_id.toString() : "",
-      start_date: project.startDate
-        ? new Date(project.startDate).toISOString().split("T")[0]
+      start_date: project.start_date
+        ? new Date(project.start_date).toISOString().split("T")[0]
         : "",
-      end_date: project.endDate
-        ? new Date(project.endDate).toISOString().split("T")[0]
+      end_date: project.end_date
+        ? new Date(project.end_date).toISOString().split("T")[0]
         : "",
-      managerName: managerName, // Pass the manager name to display in dropdown
+      managerName: managerName,
     };
   };
 
@@ -214,6 +204,11 @@ const ProjectDetails = () => {
 
   // Delete project
   const handleDeleteProject = async () => {
+    if (!isAdmin) {
+      alert("Only administrators can delete projects.");
+      return;
+    }
+
     try {
       await projectService.deleteProject(projectId, token);
       navigate("/projects", {
@@ -240,13 +235,20 @@ const ProjectDetails = () => {
   // Check if user has manager permissions
   const isManager =
     project &&
-    (project.manager_id === userId ||
+    ((project.manager_id === userId && userRole === "Admin") ||
       userRole === "Admin" ||
-      userRole === "admin" ||
-      userInfo?.permissions?.includes("manage_projects"));
+      userRole === "admin");
+
+  // Check if user has admin permissions for creating projects
+  const isAdmin = userRole === "Admin" || userRole === "admin";
 
   // Open dialog to add members
   const handleAddMemberClick = async () => {
+    if (!isAdmin) {
+      alert("Only administrators can modify project members.");
+      return;
+    }
+
     try {
       // Get all available members to add
       const allUsers = await employeeService.getEmployees(token);
@@ -264,6 +266,11 @@ const ProjectDetails = () => {
 
   // Add members to the project
   const handleAddMember = async () => {
+    if (!isAdmin) {
+      alert("Only administrators can modify project members.");
+      return;
+    }
+
     if (emailInputMode) {
       // Email input mode - add multiple members by email
       if (!memberEmails.trim()) return;
@@ -356,6 +363,10 @@ const ProjectDetails = () => {
 
   // Handle new task added
   const handleTaskAdded = () => {
+    if (!isAdmin) {
+      alert("Only administrators can add tasks.");
+      return;
+    }
     // Refresh the task list by updating the refresh key
     setTasksRefreshKey((prevKey) => prevKey + 1);
   };
@@ -435,191 +446,129 @@ const ProjectDetails = () => {
 
       {/* Tab Content */}
       {activeTab === "details" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main details - takes 2/3 of the grid */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
-              Project Description
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Description
             </h2>
-            <p className="text-gray-700 mb-6 whitespace-pre-line">
+            <p className="text-gray-700 whitespace-pre-line leading-relaxed">
               {project.description || "No description provided."}
             </p>
-
-            <div className="border-t border-gray-200 my-6"></div>
-
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
-              Key Information
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-400 mr-2 mt-0.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                <div>
-                  <p className="text-sm text-gray-500">Start Date</p>
-                  <p className="font-medium">{formatDate(project.startDate)}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-400 mr-2 mt-0.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                <div>
-                  <p className="text-sm text-gray-500">End Date</p>
-                  <p className="font-medium">{formatDate(project.endDate)}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-400 mr-2 mt-0.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                  />
-                </svg>
-                <div>
-                  <p className="text-sm text-gray-500">Category</p>
-                  <p className="font-medium">
-                    {project.category || "Not specified"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-400 mr-2 mt-0.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <div>
-                  <p className="text-sm text-gray-500">Priority</p>
-                  <span
-                    className={`inline-block px-2.5 py-0.5 rounded text-xs font-medium ${getPriorityClass(
-                      project.priority
-                    )}`}>
-                    {project.priority || "Medium"}
-                  </span>
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* Team overview - takes 1/3 of the grid */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
-              Team Members
+          <div className="border-t border-gray-200 pt-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">
+              Project Timeline
             </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <div className="flex items-center mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-blue-600 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Start Date
+                  </h3>
+                </div>
+                <p className="text-gray-600 ml-7">
+                  {formatDate(project.start_date)}
+                </p>
+              </div>
 
-            <div className="flex mb-4">
-              {members.slice(0, 5).map((member, index) => (
-                <div
-                  key={member.user_id}
-                  className={`w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium border-2 border-white ${
-                    index > 0 ? "-ml-2" : ""
-                  }`}
-                  title={memberNames[member.user_id]}>
-                  {memberNames[member.user_id]?.charAt(0) || "U"}
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <div className="flex items-center mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-blue-600 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    End Date
+                  </h3>
                 </div>
-              ))}
-              {members.length > 5 && (
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium border-2 border-white -ml-2">
-                  +{members.length - 5}
-                </div>
-              )}
+                <p className="text-gray-600 ml-7">
+                  {formatDate(project.end_date)}
+                </p>
+              </div>
             </div>
-
-            <p className="text-gray-600 mb-6">
-              {members.length} member{members.length !== 1 ? "s" : ""} in this
-              project
-            </p>
-
-            <button
-              className="w-full px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors"
-              onClick={() => setActiveTab("team")}>
-              View All Members
-            </button>
           </div>
         </div>
       )}
 
       {activeTab === "team" && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-800">Team Members</h2>
-            {isManager && (
-              <button
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                onClick={handleAddMemberClick}>
-                Add Member
-              </button>
-            )}
+        <div className="bg-white rounded-lg shadow-md">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800">Team Members</h2>
+              {isManager && (
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={handleAddMemberClick}>
+                  Add Member
+                </button>
+              )}
+            </div>
           </div>
 
           {members.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No members in this project yet.</p>
+            <div className="text-center py-16">
+              <p className="text-gray-500 text-lg">
+                No members in this project yet.
+              </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gray-100">
               {members.map((member) => (
                 <div
                   key={member.userId}
-                  className="py-4 flex justify-between items-center">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium">
+                  className="p-6 flex justify-between items-center hover:bg-gray-50">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-lg">
                       {memberNames[member.user_id]?.charAt(0) || "U"}
                     </div>
-                    <div className="ml-3">
-                      <p className="font-medium text-gray-800">
+                    <div>
+                      <p className="font-medium text-gray-800 text-lg">
                         {memberNames[member.user_id] || `Loading...`}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-gray-500">
                         {member.role || "Team Member"}
                       </p>
                     </div>
                   </div>
                   {isManager && (
                     <button
-                      className="text-red-500 hover:text-red-700"
+                      className="text-gray-400 hover:text-red-600 transition-colors"
                       onClick={() => handleRemoveMember(member.user_id)}>
-                      Remove
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
                     </button>
                   )}
                 </div>
@@ -630,18 +579,27 @@ const ProjectDetails = () => {
       )}
 
       {activeTab === "tasks" && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-800">Project Tasks</h2>
-            {isManager && (
-              <button
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                onClick={() => setShowNewTaskModal(true)}>
-                Add New Task
-              </button>
-            )}
+        <div className="bg-white rounded-lg shadow-md">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800">
+                Project Tasks
+              </h2>
+              {isManager && (
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={() => setShowNewTaskModal(true)}>
+                  Add New Task
+                </button>
+              )}
+            </div>
           </div>
-          <ProjectTaskList projectId={projectId} refreshKey={tasksRefreshKey} />
+          <div className="p-6">
+            <ProjectTaskList
+              projectId={projectId}
+              refreshKey={tasksRefreshKey}
+            />
+          </div>
         </div>
       )}
 

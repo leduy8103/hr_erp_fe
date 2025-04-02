@@ -43,12 +43,6 @@ const Sidebar = () => {
       roles: ["employee", "manager"],
     },
     {
-      title: "All Departments",
-      icon: "apartment",
-      path: "/departments",
-      roles: ["admin", "manager"],
-    },
-    {
       title: "Attendance",
       icon: "schedule",
       path: "/attendance",
@@ -62,15 +56,9 @@ const Sidebar = () => {
       roles: ["admin", "manager"],
     },
     {
-      title: "Candidates",
-      icon: "person_search",
-      path: "/candidates",
-      roles: ["admin", "manager"],
-    },
-    {
       title: "Leaves",
       icon: "event",
-      path: null, // Changed from "/leaves" to null as this is a parent menu
+      path: null,
       roles: ["admin", "manager", "employee"],
       subItems: [
         { title: "Leave Request", path: "/leave-request" },
@@ -78,18 +66,6 @@ const Sidebar = () => {
           ? [{ title: "Leave Approval", path: "/leave-approval" }]
           : []),
       ],
-    },
-    {
-      title: "Holidays",
-      icon: "beach_access",
-      path: "/holidays",
-      roles: ["admin", "manager", "employee"],
-    },
-    {
-      title: "Settings",
-      icon: "settings",
-      path: "/settings",
-      roles: ["admin"],
     },
   ];
 
