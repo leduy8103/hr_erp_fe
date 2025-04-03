@@ -1,5 +1,5 @@
 // filepath: d:\React\hr-erp-frontend\src\App.js
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -20,8 +20,20 @@ import PayrollPage from "./pages/PayrollPage";
 import ChatBox from './components/ChatBox';
 
 
+const AuthenticatedLayout = ({ children }) => {
+  return (
+    <>
+      {children}
+      <ChatBox />
+    </>
+  );
+};
+
 function App() {
   // Debug: Log user info to check if role is correctly saved
+
+  const [isAuth, setIsAuth] = useState(false);
+
   useEffect(() => {
     const userStr = localStorage.getItem("user");
     if (userStr) {
@@ -108,7 +120,13 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              isAuthenticated() ? <Dashboard /> : <Navigate to="/login" />
+              isAuthenticated() ? (
+                <AuthenticatedLayout>
+                  <Dashboard />
+                </AuthenticatedLayout>
+              ) : (
+                <Navigate to="/login" />
+              )
             }
           />
           <Route
@@ -155,7 +173,6 @@ function App() {
           />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
-        <ChatBox />
       </div>
     </Router>
   );

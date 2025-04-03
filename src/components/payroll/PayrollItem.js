@@ -1,4 +1,3 @@
-// filepath: d:\React\hr-erp-frontend\src\components\payroll\PayrollItem.js
 import React from 'react';
 
 const getInitials = (name) => {
@@ -29,7 +28,7 @@ const getAvatarColor = (name) => {
   return colors[index] || colors[0];
 };
 
-const PayrollItem = ({ payroll, onViewDetails, onDelete }) => {
+const PayrollItem = ({ payroll, onViewDetails, onDelete, onUpdate, isAdmin = false }) => {
   const getStatusClass = (status) => {
     switch (status) {
       case 'Completed':
@@ -94,18 +93,32 @@ const PayrollItem = ({ payroll, onViewDetails, onDelete }) => {
         </span>
       </td>
       <td className="px-6 py-4 text-right">
-        <button
-          onClick={() => onViewDetails(payroll)}
-          className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-        >
-          View Details
-        </button>
-        <button
-          className="text-red-600 hover:underline"
-          onClick={() => onDelete(payroll.id)}
-        >
-          Xóa
-        </button>
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={() => onViewDetails(payroll)}
+            className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+          >
+            Chi tiết
+          </button>
+          
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => onUpdate(payroll)}
+                className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
+              >
+                Sửa
+              </button>
+              
+              <button
+                onClick={() => onDelete(payroll.id)}
+                className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition-colors"
+              >
+                Xóa
+              </button>
+            </>
+          )}
+        </div>
       </td>
     </tr>
   );

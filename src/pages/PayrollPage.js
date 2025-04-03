@@ -1,10 +1,9 @@
-// filepath: d:\React\hr-erp-frontend\src\pages\PayrollPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { getAllPayrolls, exportPayroll, createPayroll, deletePayroll } from '../services/payrollService';
+import { getAllPayrolls, exportPayroll, deletePayroll } from '../services/payrollService';
 import PayrollItem from '../components/payroll/PayrollItem';
 import PayrollForm from '../components/payroll/PayrollForm';
-import authService from '../services/authService';
+import { PayrollPDFDownloadButton } from '../components/payroll/PayrollPDF';
 
 const PayrollPage = () => {
     const [payrolls, setPayrolls] = useState([]);
@@ -20,6 +19,8 @@ const PayrollPage = () => {
     const [successMessage, setSuccessMessage] = useState('');
     const [userRole, setUserRole] = useState('');
     const [userId, setUserId] = useState('');
+    const [selectedPayroll, setSelectedPayroll] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
         // Kiểm tra nếu người dùng là admin hoặc kế toán
@@ -44,16 +45,11 @@ const PayrollPage = () => {
             setLoading(true);
             const response = await getAllPayrolls();
 
-            console.log("Raw API Response:", response);
+            console.log("API Response:", response);
 
-            if (response?.success && response?.data?.data) {
-                // Directly access the data array
-                const payrollData = response.data.data;
-
-                console.log("Extracted payroll data:", payrollData);
-                console.log("Number of payroll records:", payrollData.data.length);
-
-                setPayrolls(payrollData.data);
+            if (response?.success && Array.isArray(response.data)) {
+                // Ensure response.data is an array
+                setPayrolls(response.data);
                 setError('');
             } else {
                 console.error("Invalid response structure:", response);
@@ -69,6 +65,28 @@ const PayrollPage = () => {
         }
     };
 
+    const handleUpdateClick = (payroll) => {
+        setSelectedPayroll(payroll);
+        setIsEditing(true);
+        setShowCreateModal(true);
+    };
+
+    const handlePayrollUpdated = (updatedPayroll) => {
+        setPayrolls(prevPayrolls =>
+            prevPayrolls.map(p =>
+                p.id === updatedPayroll.id ? updatedPayroll : p
+            )
+        );
+        setShowCreateModal(false);
+        setIsEditing(false);
+        setSelectedPayroll(null);
+        setSuccessMessage('Bảng lương đã được cập nhật thành công');
+
+        setTimeout(() => {
+            setSuccessMessage('');
+        }, 3000);
+    };
+
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
         setCurrentPage(1); // Reset về trang đầu khi tìm kiếm
@@ -76,13 +94,13 @@ const PayrollPage = () => {
 
     const handleDeletePayroll = async (payrollId) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa bảng lương này?')) return;
-    
+
         try {
             const response = await deletePayroll(payrollId);
             if (response.success) {
                 setPayrolls(prevPayrolls => prevPayrolls.filter(payroll => payroll.id !== payrollId));
                 setSuccessMessage('Đã xóa bảng lương thành công');
-    
+
                 setTimeout(() => {
                     setSuccessMessage('');
                 }, 3000);
@@ -95,22 +113,45 @@ const PayrollPage = () => {
         }
     };
 
-    const handleExport = async (employeeId) => {
+    const handleExport = async (payrollId) => {
         try {
-            const response = await exportPayroll(employeeId);
-            if (response.success) {
-                console.log('Xuất bảng lương thành công:', response.data);
-                setSuccessMessage('Đã xuất dữ liệu bảng lương thành công');
+            // Get the payroll object first to extract employee_id
+            const payroll = payrolls.find(p => p.id === payrollId);
 
-                setTimeout(() => {
-                    setSuccessMessage('');
-                }, 3000);
+            if (!payroll) {
+                setError('Không tìm thấy thông tin bảng lương');
+                return;
+            }
+            setShowExportModal(true);
+
+            // Now pass the employee_id to the exportPayroll function
+            const response = await exportPayroll(payroll.employee_id);
+
+            if (response.success) {
+                if (response.data.fileUrl) {
+                    window.open(response.data.fileUrl, '_blank');
+                } else if (response.data.fileContent) {
+                    const blob = new Blob([response.data.fileContent], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `payroll_${payroll.employee_id}.pdf`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                } else {
+                    setError('Không tìm thấy dữ liệu file để tải xuống');
+                }
             } else {
                 setError(response.message || 'Xuất bảng lương thất bại');
             }
         } catch (err) {
             console.error('Lỗi khi xuất bảng lương:', err);
             setError(err.response?.data?.message || 'Không thể xuất dữ liệu bảng lương');
+        } finally {
+            // Xóa thông báo sau 3 giây
+            setTimeout(() => {
+                setSuccessMessage('');
+            }, 3000);
         }
     };
 
@@ -125,11 +166,15 @@ const PayrollPage = () => {
     };
 
     const openCreateModal = () => {
+        setIsEditing(false);
+        setSelectedPayroll(null);
         setShowCreateModal(true);
     };
 
     const closeCreateModal = () => {
         setShowCreateModal(false);
+        setIsEditing(false);
+        setSelectedPayroll(null);
     };
 
     const handlePayrollCreated = (newPayroll) => {
@@ -240,7 +285,7 @@ const PayrollPage = () => {
                                     Tạo mới
                                 </button>
                             )}
-                            <button
+                            {/* <button
                                 onClick={() => handleExport('all')}
                                 className="flex items-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
                             >
@@ -248,7 +293,7 @@ const PayrollPage = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                 </svg>
                                 Xuất PDF
-                            </button>
+                            </button> */}
                         </div>
                     </div>
                 </div>
@@ -287,15 +332,13 @@ const PayrollPage = () => {
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Lương tháng</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Khấu trừ</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng thái</th>
-                                    {isAdmin && (
-                                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao tác</th>
-                                    )}
+                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {currentItems.length === 0 ? (
                                     <tr>
-                                        <td colSpan={isAdmin ? 6 : 5} className="px-6 py-12 text-center">
+                                        <td colSpan="6" className="px-6 py-12 text-center">
                                             <div className="flex flex-col items-center">
                                                 <svg className="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -306,18 +349,16 @@ const PayrollPage = () => {
                                         </td>
                                     </tr>
                                 ) : (
-                                    currentItems.map((payroll) => {
-                                        console.log("Rendering payroll item:", payroll); // Debug log
-                                        return (
-                                            <PayrollItem
+                                    currentItems.map((payroll) => (
+                                        <PayrollItem
                                             key={payroll.id}
                                             payroll={payroll}
                                             onViewDetails={openExportModal}
                                             onDelete={() => handleDeletePayroll(payroll.id)}
+                                            onUpdate={() => handleUpdateClick(payroll)}
                                             isAdmin={isAdmin}
-                                            />
-                                        );
-                                    })
+                                        />
+                                    ))
                                 )}
                             </tbody>
                         </table>
@@ -451,7 +492,7 @@ const PayrollPage = () => {
                             >
                                 Đóng
                             </button>
-                            <button
+                            {/* <button
                                 onClick={() => {
                                     handleExport(selectedEmployee.id);
                                     closeExportModal();
@@ -459,19 +500,25 @@ const PayrollPage = () => {
                                 className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
                             >
                                 Xuất PDF
-                            </button>
+                            </button> */}
+                            {/* Thay thế nút xuất PDF cũ bằng component PayrollPDFDownloadButton */}
+                            
+                            <PayrollPDFDownloadButton payroll={selectedEmployee} />
+                            
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Create Payroll Modal */}
+            {/* Create/Edit Payroll Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="p-6">
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-xl font-semibold">Tạo bảng lương mới</h3>
+                                <h3 className="text-xl font-semibold">
+                                    {isEditing ? 'Cập nhật bảng lương' : 'Tạo bảng lương mới'}
+                                </h3>
                                 <button
                                     onClick={closeCreateModal}
                                     className="text-gray-400 hover:text-gray-600"
@@ -483,7 +530,8 @@ const PayrollPage = () => {
                             </div>
 
                             <PayrollForm
-                                onSuccess={handlePayrollCreated}
+                                payrollData={selectedPayroll}
+                                onSuccess={isEditing ? handlePayrollUpdated : handlePayrollCreated}
                                 onCancel={closeCreateModal}
                             />
                         </div>

@@ -1,7 +1,6 @@
-// filepath: d:\React\hr-erp-frontend\src\components\payroll\PayrollForm.js
 import React, { useState, useEffect } from 'react';
 import employeeService from '../../services/employeeService';
-import { createPayroll } from '../../services/payrollService';
+import { createPayroll, updatePayroll } from '../../services/payrollService';
 
 // Tỷ lệ thuế và bảo hiểm theo quy định Việt Nam
 const PERSONAL_INCOME_TAX_RATE = 0.1; // 10% thuế TNCN tạm tính
@@ -18,26 +17,29 @@ const REGIONAL_MIN_WAGE = {
     'IV': 3250000  // Vùng IV
 };
 
-const PayrollForm = ({ onSuccess, onCancel }) => {
+const PayrollForm = ({ onSuccess, onCancel, payrollData }) => {
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
-        employee_id: '',
-        base_salary: '',
-        allowances: '0',
-        additional_deductions: '0', // Đổi tên từ deductions thành additional_deductions
-        pay_period: 'Monthly',
-        region: DEFAULT_REGION
+        employee_id: payrollData?.employee_id || '',
+        base_salary: payrollData?.base_salary || '',
+        allowances: payrollData?.allowances || '0',
+        additional_deductions: payrollData?.deductions || '0',
+        pay_period: payrollData?.pay_period || 'Monthly',
+        region: payrollData?.region || DEFAULT_REGION
     });
     const [calculations, setCalculations] = useState({
-        social_insurance: 0,
-        health_insurance: 0,
-        unemployment_insurance: 0,
-        personal_income_tax: 0,
-        total_deductions: 0,
-        net_salary: 0
+        social_insurance: payrollData?.social_insurance || 0,
+        health_insurance: payrollData?.health_insurance || 0,
+        unemployment_insurance: payrollData?.unemployment_insurance || 0,
+        personal_income_tax: payrollData?.personal_income_tax || 0,
+        total_deductions: payrollData?.total_deductions || 0,
+        net_salary: payrollData?.net_salary || 0
     });
+
+    // Kiểm tra nếu đang trong chế độ chỉnh sửa
+    const isEditMode = !!payrollData;
 
     useEffect(() => {
         fetchEmployees();
@@ -146,38 +148,39 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
             setLoading(true);
 
             // Chuẩn bị dữ liệu
-            const payrollData = {
-                employee_id: formData.employee_id, // Đảm bảo trường này đúng với backend
+            const payload = {
+                employee_id: formData.employee_id,
                 base_salary: parseFloat(formData.base_salary),
                 allowances: parseFloat(formData.allowances) || 0,
                 deductions: parseFloat(formData.additional_deductions) || 0,
                 social_insurance: Math.round(calculations.social_insurance),
                 health_insurance: Math.round(calculations.health_insurance),
                 unemployment_insurance: Math.round(calculations.unemployment_insurance),
-                personal_income_tax: Math.round(calculations.personal_income_tax),
+                personal_income_tax: Math.round(calculations.personal_income_tax), 
                 total_deductions: Math.round(calculations.total_deductions),
                 net_salary: Math.round(calculations.net_salary),
                 pay_period: formData.pay_period,
                 region: formData.region,
-                status: 'Pending' // Đặt trạng thái mặc định là Chờ xử lý
+                status: payrollData ? payrollData.status : 'Completed'
             };
 
-            console.log('Sending payroll data:', payrollData);
+            console.log(`${isEditMode ? 'Updating' : 'Creating'} payroll data:`, payload);
 
-            const response = await createPayroll(payrollData);
-
-            // Make sure we're passing the correct data structure to onSuccess
-            if (response && response.data) {
-                onSuccess(response.data);
-            } else if (response) {
-                // If response exists but doesn't have a data property, assume the response itself is the data
-                onSuccess(response);
+            let response;
+            if (isEditMode) {
+                response = await updatePayroll(payrollData.id, payload);
             } else {
-                throw new Error('Invalid response from server');
+                response = await createPayroll(payload);
+            }
+
+            if (response.success) {
+                onSuccess(response.data);
+            } else {
+                throw new Error(response.message || 'Operation failed');
             }
         } catch (err) {
-            console.error('Lỗi khi tạo bảng lương:', err);
-            setError(err.message || 'Đã xảy ra lỗi khi tạo bảng lương');
+            console.error(`Lỗi khi ${isEditMode ? 'cập nhật' : 'tạo'} bảng lương:`, err);
+            setError(err.message || `Đã xảy ra lỗi khi ${isEditMode ? 'cập nhật' : 'tạo'} bảng lương`);
         } finally {
             setLoading(false);
         }
@@ -185,7 +188,9 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
 
     return (
         <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Tạo Bảng Lương Mới</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {isEditMode ? 'Cập Nhật Bảng Lương' : 'Tạo Bảng Lương Mới'}
+            </h3>
 
             {error && (
                 <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md">
@@ -201,7 +206,7 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
                         value={formData.employee_id}
                         onChange={handleChange}
                         className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={loading}
+                        disabled={loading || isEditMode} // Disable trong chế độ chỉnh sửa
                         required
                     >
                         <option value="">Chọn nhân viên</option>
@@ -359,7 +364,7 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         )}
-                        {loading ? 'Đang tạo...' : 'Tạo bảng lương'}
+                        {loading ? 'Đang xử lý...' : isEditMode ? 'Cập nhật' : 'Tạo bảng lương'}
                     </button>
                 </div>
             </form>
