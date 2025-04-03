@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Clock, ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 import authService from '../../services/authService';
 import employeeService from '../../services/employeeService';
+import attendanceService from '../../services/attendanceService';
 import AttendanceOverview from '../Attendancce/AttendanceOverview';
 
 const AttendancePage = () => {
@@ -21,65 +22,13 @@ const AttendancePage = () => {
   console.log(employeeService.getCurrentUserProfile());
 
   const formatTime = (isoTime) => {
-    if (!isoTime) return '';
-    const date = new Date(isoTime);
-    return date.toLocaleTimeString('vi-VN', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: false 
-    });
+    return attendanceService.formatTime(isoTime);
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return '';
-    
-    if (typeof dateString === 'string' && 
-        (dateString === 'No Previous Records' || 
-         dateString.includes('Previous Record'))) {
-      return dateString;
-    }
-    
-    try {
-      console.log('Date string to format:', dateString);
-      
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      const inputDate = new Date(dateString);
-      
-      if (isNaN(inputDate.getTime())) {
-        console.warn('Invalid date string:', dateString);
-        return 'Invalid Date';
-      }
-      
-      if (inputDate.toDateString() === today.toDateString()) {
-        return 'Today';
-      } else {
-        return inputDate.toLocaleDateString(undefined, {
-          weekday: 'short',
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        });
-      }
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Invalid Date';
-    }
+    return attendanceService.formatDate(dateString);
   };
   
-  const getAuthHeaders = () => {
-    const token = authService.getToken();
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
-  };
-  
-  const getUserId = () => {
-    return authService.getUserIdFromToken() || 1;
-  };
-
   const getUserRoleFromToken = () => {
     try {
       const token = authService.getToken();
@@ -165,149 +114,105 @@ const AttendancePage = () => {
   const fetchAttendanceStatus = async () => {
     try {
       setLoading(true);
-      setError('');
-      
-      const currentResponse = await fetch('http://localhost:3000/attendance/currentuser', {
-        headers: getAuthHeaders()
-      });
-      
-      if (!currentResponse.ok) {
-        throw new Error('Failed to fetch attendance data');
-      }
-      
-      const currentResult = await currentResponse.json();
+      setError("");
+
+      const currentResult = await attendanceService.getCurrentUserAttendance();
       console.log("Current attendance data:", currentResult);
-      
+
       if (currentResult.data && currentResult.data.today_date) {
         setTodayDate(currentResult.data.today_date);
       }
-      
+
       if (currentResult.data) {
         setAttendanceData(currentResult.data);
       }
-      
-      const historyResponse = await fetch('http://localhost:3000/attendance/history', {
-        headers: getAuthHeaders()
-      });
-      
-      if (!historyResponse.ok) {
-        throw new Error('Failed to fetch attendance history');
-      }
-      
-      const historyResult = await historyResponse.json();
+
+      const historyResult = await attendanceService.getAttendanceHistory();
       console.log("Attendance history:", historyResult);
-      
+
       let processedHistory = [];
-      
+
       if (currentResult.data && currentResult.data.is_checked_in) {
         const todayRecord = {
           day: currentResult.data.today_date,
           checkInTime: currentResult.data.attendance_data.check_in_time,
-          checkOutTime: currentResult.data.is_checked_out ? currentResult.data.attendance_data.check_out_time : 'Working...',
-          status: currentResult.data.status
+          checkOutTime: currentResult.data.is_checked_out
+            ? currentResult.data.attendance_data.check_out_time
+            : "Working...",
+          status: currentResult.data.status,
         };
-        
+
         processedHistory.push(todayRecord);
       }
-      
+
       if (historyResult.data && Array.isArray(historyResult.data)) {
-        const previousRecords = historyResult.data.map(record => ({
+        const previousRecords = historyResult.data.map((record) => ({
           day: record.date || record.created_at,
           checkInTime: record.check_in_time,
           checkOutTime: record.check_out_time,
-          status: record.status || 'Completed'
+          status: record.status || "Completed",
         }));
-        
+
         processedHistory = [...processedHistory, ...previousRecords];
       }
-      
+
       if (processedHistory.length === 0) {
         processedHistory.push({
-          day: 'No Previous Records',
-          checkInTime: '--:--',
-          checkOutTime: '--:--',
-          status: 'N/A'
+          day: "No Previous Records",
+          checkInTime: "--:--",
+          checkOutTime: "--:--",
+          status: "N/A",
         });
       }
-      
+
       setAttendanceHistory(processedHistory);
-      
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching attendance data:', err);
+      console.error("Error fetching attendance data:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const isCurrentAttendanceFromToday = () => {
-    if (!attendanceData || !attendanceData.attendance_data || !attendanceData.attendance_data.check_in_time) {
-      return false;
-    }
-    
-    const checkInDate = new Date(attendanceData.attendance_data.check_in_time).toISOString().split('T')[0];
-    return checkInDate === todayDate;
+    return attendanceService.isCurrentAttendanceFromToday(attendanceData);
   };
 
   const handleCheckIn = async () => {
     if (!gpsData) {
-      setError("GPS data is required for check-in. Please enable location services.");
+      setError(
+        "GPS data is required for check-in. Please enable location services."
+      );
       return;
     }
-    
+
     try {
       setLoading(true);
-      
-      const statusResponse = await fetch('http://localhost:3000/attendance/currentuser', {
-        headers: getAuthHeaders()
-      });
-      
-      if (!statusResponse.ok) {
-        throw new Error('Failed to verify current attendance status');
-      }
-      
-      const statusData = await statusResponse.json();
-      console.log('Current status data:', statusData);
-      
-      if (statusData.data && 
-          statusData.data.is_checked_in && 
-          !statusData.data.is_checked_out && 
-          isCurrentAttendanceFromToday()) {
+
+      const statusData = await attendanceService.getCurrentUserAttendance();
+      console.log("Current status data:", statusData);
+
+      if (
+        statusData.data &&
+        statusData.data.is_checked_in &&
+        !statusData.data.is_checked_out &&
+        attendanceService.isCurrentAttendanceFromToday(statusData.data)
+      ) {
         setError("You have already checked in today and haven't checked out.");
         setLoading(false);
         return;
       }
-      
-      const now = new Date();
-      
-      const checkInData = {
-        userId: getUserId(),
-        check_in_time: now.toISOString(),
-        gps_location: gpsData
-      };
-      
-      console.log('Sending check-in data:', checkInData);
-      
-      const response = await fetch('http://localhost:3000/attendance/check-in', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(checkInData)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to check in');
-      }
-      
-      console.log('Check-in successful');
-      
+
+      await attendanceService.checkIn(gpsData);
+      console.log("Check-in successful");
+
       setWorkingHours(0);
       setWorkingMinutes(0);
-      
+
       await fetchAttendanceStatus();
     } catch (err) {
-      console.error('Check-in error:', err);
-      setError(err.message || 'Failed to check in');
+      console.error("Check-in error:", err);
+      setError(err.message || "Failed to check in");
     } finally {
       setLoading(false);
     }
@@ -315,62 +220,36 @@ const AttendancePage = () => {
 
   const handleCheckOut = async () => {
     if (!gpsData) {
-      setError("GPS data is required for check-out. Please enable location services.");
+      setError(
+        "GPS data is required for check-out. Please enable location services."
+      );
       return;
     }
-    
+
     try {
       setLoading(true);
-      
-      const statusResponse = await fetch('http://localhost:3000/attendance/currentuser', {
-        headers: getAuthHeaders()
-      });
-      
-      if (!statusResponse.ok) {
-        throw new Error('Failed to verify current attendance status');
-      }
-      
-      const statusData = await statusResponse.json();
-      
+
+      const statusData = await attendanceService.getCurrentUserAttendance();
+
       if (!statusData.data || !statusData.data.is_checked_in) {
         setError("You must check in first");
         setLoading(false);
         return;
       }
-      
+
       if (statusData.data.is_checked_out) {
         setError("You have already checked out today");
         setLoading(false);
         return;
       }
-      
-      const now = new Date();
-      
-      const checkOutData = {
-        userId: getUserId(),
-        check_out_time: now.toISOString(),
-        gps_location: gpsData
-      };
-      
-      console.log('Sending check-out data:', checkOutData);
-      
-      const response = await fetch('http://localhost:3000/attendance/check-out', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(checkOutData)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to check out');
-      }
-      
-      console.log('Check-out successful');
-      
+
+      await attendanceService.checkOut(gpsData);
+      console.log("Check-out successful");
+
       await fetchAttendanceStatus();
     } catch (err) {
-      console.error('Check-out error:', err);
-      setError(err.message || 'Failed to check out');
+      console.error("Check-out error:", err);
+      setError(err.message || "Failed to check out");
     } finally {
       setLoading(false);
     }
