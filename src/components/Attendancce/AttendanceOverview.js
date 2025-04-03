@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import {ChevronLeft, ChevronRight } from 'lucide-react';
-import axios from 'axios';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import './css/AttendanceDashboard.css';
-import authService from '../../services/authService';
+import attendanceService from '../../services/attendanceService';
 
 const AttendanceOverview = () => {
   const [activeTheme, setActiveTheme] = useState('light');
@@ -21,21 +20,13 @@ const AttendanceOverview = () => {
     setError(null);
     
     try {
-      const response = await axios.get(
-        `http://localhost:3000/api/attendance/user`,
-        {
-          headers: {
-            Authorization: `Bearer ${authService.getToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await attendanceService.getAllUsersAttendance(selectedDate);
       
-      if (response.data && response.data.success) {
-        console.log('Attendance data:', response.data);
-        setAttendanceData(response.data.data || []);
+      if (response && response.success) {
+        console.log('Attendance data:', response);
+        setAttendanceData(response.data || []);
       } else {
-        setError(response.data?.message || 'Failed to fetch attendance data');
+        setError(response?.message || 'Failed to fetch attendance data');
       }
     } catch (err) {
       console.error('Error fetching attendance data:', err);
@@ -45,41 +36,14 @@ const AttendanceOverview = () => {
     }
   };
   
+  // Format time for display
   const formatTime = (timeString) => {
-    if (!timeString) return 'Not checked in';
-    
-    if (timeString.includes('T')) {
-      const date = new Date(timeString);
-      let hours = date.getHours();
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12;
-      hours = hours ? hours : 12; // the hour '0' should be '12'
-      return `${hours}:${minutes} ${ampm}`;
-    }
-    
-    // If it's already in HH:MM format, just return it
-    return timeString;
+    return attendanceService.formatTime(timeString);
   };
   
   // Determine attendance status
   const getAttendanceStatus = (checkInTime) => {
-    if (!checkInTime) return 'Absent';
-    
-    // If it's an ISO string, convert to Date object
-    if (typeof checkInTime === 'string' && checkInTime.includes('T')) {
-      const date = new Date(checkInTime);
-      const hours = date.getHours();
-      const minutes = date.getMinutes();
-      
-      // Consider 9:00 AM as the cutoff time for being late
-      if (hours > 9 || (hours === 9 && minutes > 0)) {
-        return 'Late';
-      }
-      return 'On Time';
-    }
-    
-    return 'Present';
+    return attendanceService.getAttendanceStatus(checkInTime);
   };
   
   // Handle date change

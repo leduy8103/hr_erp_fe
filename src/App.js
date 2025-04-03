@@ -203,7 +203,7 @@ function App() {
           />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
-        <ChatBox />
+        {/* <ChatBox /> */} 
       </div>
     </Router>
   );
