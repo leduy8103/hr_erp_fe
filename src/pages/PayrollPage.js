@@ -41,9 +41,9 @@ const PayrollPage = () => {
     }, []);
 
     const fetchPayrolls = async () => {
-        try {
-            setLoading(true);
-            const response = await getAllPayrolls();
+      try {
+        setLoading(true);
+        const response = await getAllPayrolls();
 
             console.log("API Response:", response);
 

@@ -16,6 +16,7 @@ import Forbiden from "./components/common/Forbiden";
 import authService from "./services/authService";
 import LeaveRequestPage from "./pages/LeaveRequestPage";
 import LeaveApprovalPage from "./pages/LeaveApprovalPage";
+import AttendancePage from "./pages/Attendance";
 import PayrollPage from "./pages/PayrollPage";
 import ChatBox from './components/ChatBox';
 
@@ -81,6 +82,17 @@ function App() {
     }
   };
 
+  const isAdminOrAccountant = () => {
+    try {
+      const userData = JSON.parse(localStorage.getItem("user") || "{}");
+      const userRole = userData.user?.role || userData.role;
+      return userRole === "Admin" || userRole === "Accountant";
+    } catch (error) {
+      console.error("Error in isAdminOrAccountant:", error);
+      return false;
+    }
+  };
+
   const isAdminOrManager = () => {
     try {
       const userData = JSON.parse(localStorage.getItem("user") || "{}");
@@ -97,17 +109,6 @@ function App() {
       return isAdminManagerResult;
     } catch (error) {
       console.error("Error in isAdminOrManager:", error);
-      return false;
-    }
-  };
-  
-  const isAdminOrAccountant = () => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      const userRole = userData.user?.role || userData.role;
-      return userRole === "Admin" || userRole === "Accountant";
-    } catch (error) {
-      console.error("Error in isAdminOrAccountant:", error);
       return false;
     }
   };
@@ -132,7 +133,15 @@ function App() {
           <Route
             path="/employees"
             element={
-              isAuthenticated() ? <AllEmployees /> : <Navigate to="/login" />
+              isAuthenticated() ? (
+                hasRole("Admin") ? (
+                  <AllEmployees />
+                ) : (
+                  <Forbiden message="Only administrators can access employee management." />
+                )
+              ) : (
+                <Navigate to="/login" />
+              )
             }
           />
           <Route
@@ -148,10 +157,14 @@ function App() {
           <Route
             path="/leave-approval"
             element={
-              isAuthenticated() && isAdminOrManager() ? (
-                <LeaveApprovalPage />
+              isAuthenticated() ? (
+                isAdminOrManager() ? (
+                  <LeaveApprovalPage />
+                ) : (
+                  <Forbiden message="Only managers and administrators can approve leave requests." />
+                )
               ) : (
-                <Navigate to="/dashboard" />
+                <Navigate to="/login" />
               )
             }
           />
@@ -159,16 +172,46 @@ function App() {
             path="/payroll"
             element={
               isAuthenticated() ? (
-                <PayrollPage />
+                isAdminOrAccountant() ? (
+                  <PayrollPage />
+                ) : (
+                  <Forbiden message="Only accountants and administrators can access payroll information." />
+                )
               ) : (
                 <Navigate to="/login" />
               )
             }
           />
           <Route
-            path="/"
+            path="/projects/*"
             element={
-              <Navigate to={isAuthenticated() ? "/dashboard" : "/login"} />
+              isAuthenticated() ? (
+                isAdminOrManager() ? (
+                  <Project />
+                ) : (
+                  <Forbiden message="Only managers and administrators can access project management." />
+                )
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              isAuthenticated() ? <UserProfilePage /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/profile/:id"
+            element={
+              isAuthenticated() ? <UserProfilePage /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/attendance"
+            element={
+              isAuthenticated() ? <AttendancePage /> : <Navigate to="/login" />
             }
           />
           <Route path="*" element={<Navigate to="/" />} />
