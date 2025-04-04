@@ -9,13 +9,38 @@ const Sidebar = () => {
   const [openSubMenu, setOpenSubMenu] = useState(null);
 
   useEffect(() => {
-    // Get user role from token
-    const token = authService.getToken();
-    if (token) {
-      const decodedToken = authService.decodeToken(token);
-      if (decodedToken && decodedToken.role) {
-        setUserRole(decodedToken.role.toLowerCase());
+    // Get user role from localStorage
+    try {
+      const userData = JSON.parse(localStorage.getItem("user") || "{}");
+      
+      // Kiểm tra nhiều cách cấu trúc dữ liệu khác nhau để lấy role
+      let role = null;
+      
+      // Cấu trúc 1: { user: { role: "Admin" } }
+      if (userData.user && userData.user.role) {
+        role = userData.user.role;
+      } 
+      // Cấu trúc 2: { role: "Admin" }
+      else if (userData.role) {
+        role = userData.role;
       }
+      // Backup: Lấy từ token nếu không có trong dữ liệu người dùng
+      else {
+        const token = authService.getToken();
+        if (token) {
+          const decodedToken = authService.decodeToken(token);
+          if (decodedToken && decodedToken.role) {
+            role = decodedToken.role;
+          }
+        }
+      }
+      
+      if (role) {
+        console.log("Sidebar detected role:", role);
+        setUserRole(role.toLowerCase());
+      }
+    } catch (error) {
+      console.error("Error getting user role:", error);
     }
   }, []);
 
@@ -43,6 +68,12 @@ const Sidebar = () => {
       roles: ["employee", "manager"],
     },
     {
+      title: "All Departments",
+      icon: "apartment",
+      path: "/departments",
+      roles: ["admin", "manager"],
+    },
+    {
       title: "Attendance",
       icon: "schedule",
       path: "/attendance",
@@ -56,9 +87,15 @@ const Sidebar = () => {
       roles: ["admin", "manager"],
     },
     {
+      title: "Candidates",
+      icon: "person_search",
+      path: "/candidates",
+      roles: ["admin", "manager"],
+    },
+    {
       title: "Leaves",
       icon: "event",
-      path: null,
+      path: null, // Changed from "/leaves" to null as this is a parent menu
       roles: ["admin", "manager", "employee"],
       subItems: [
         { title: "Leave Request", path: "/leave-request" },
@@ -66,6 +103,18 @@ const Sidebar = () => {
           ? [{ title: "Leave Approval", path: "/leave-approval" }]
           : []),
       ],
+    },
+    {
+      title: "Holidays",
+      icon: "beach_access",
+      path: "/holidays",
+      roles: ["admin", "manager", "employee"],
+    },
+    {
+      title: "Settings",
+      icon: "settings",
+      path: "/settings",
+      roles: ["admin"],
     },
   ];
 

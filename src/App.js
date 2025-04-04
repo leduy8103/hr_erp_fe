@@ -97,9 +97,25 @@ function App() {
     try {
       const userData = JSON.parse(localStorage.getItem("user") || "{}");
       // Cấu trúc có thể là { role } hoặc { user: { role } }
-      const userRole = userData.user?.role || userData.role;
+      // const userRole = userData.user?.role || userData.role;
+      // const isAdminManagerResult =
+      //   userRole === "Admin" || userRole === "Manager";
+
+      // Cấu trúc dữ liệu có thể khác nhau
+      let userRole = null;
+      
+      // Kiểm tra các cấu trúc có thể: { user: { role } }, { role }
+      if (userData.user && userData.user.role) {
+        userRole = userData.user.role;
+      } else if (userData.role) {
+        userRole = userData.role;
+      }
+      
+      // Chuyển về chữ thường để so sánh không phân biệt hoa thường
+      const normalizedUserRole = userRole ? userRole.toLowerCase() : '';
+      
       const isAdminManagerResult =
-        userRole === "Admin" || userRole === "Manager";
+        normalizedUserRole === "admin" || normalizedUserRole === "manager";
       console.log(
         "isAdminOrManager check result:",
         isAdminManagerResult,
@@ -134,7 +150,7 @@ function App() {
             path="/employees"
             element={
               isAuthenticated() ? (
-                hasRole("Admin") ? (
+                isAdminOrManager() ? (
                   <AllEmployees />
                 ) : (
                   <Forbiden message="Only administrators can access employee management." />
@@ -172,7 +188,7 @@ function App() {
             path="/payroll"
             element={
               isAuthenticated() ? (
-                isAdminOrAccountant() ? (
+                isAdminOrManager() ? (
                   <PayrollPage />
                 ) : (
                   <Forbiden message="Only accountants and administrators can access payroll information." />
