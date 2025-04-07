@@ -118,11 +118,6 @@ export const exportPayroll = async (employeeId) => {
 // Tạo bảng lương mới (kiểm tra quyền admin/kế toán)
 export const createPayroll = async (payrollData) => {
     try {
-        const userRole = authService.getUserRole();
-        if (userRole !== 'Admin' && userRole !== 'Accountant') {
-            throw new Error('Unauthorized to create payroll');
-        }
-
         const response = await api.post('/api/payroll/create', payrollData);
         return {
             success: true,

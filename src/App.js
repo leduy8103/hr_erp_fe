@@ -97,25 +97,9 @@ function App() {
     try {
       const userData = JSON.parse(localStorage.getItem("user") || "{}");
       // Cấu trúc có thể là { role } hoặc { user: { role } }
-      // const userRole = userData.user?.role || userData.role;
-      // const isAdminManagerResult =
-      //   userRole === "Admin" || userRole === "Manager";
-
-      // Cấu trúc dữ liệu có thể khác nhau
-      let userRole = null;
-      
-      // Kiểm tra các cấu trúc có thể: { user: { role } }, { role }
-      if (userData.user && userData.user.role) {
-        userRole = userData.user.role;
-      } else if (userData.role) {
-        userRole = userData.role;
-      }
-      
-      // Chuyển về chữ thường để so sánh không phân biệt hoa thường
-      const normalizedUserRole = userRole ? userRole.toLowerCase() : '';
-      
+      const userRole = userData.user?.role || userData.role;
       const isAdminManagerResult =
-        normalizedUserRole === "admin" || normalizedUserRole === "manager";
+        userRole === "Admin" || userRole === "Manager";
       console.log(
         "isAdminOrManager check result:",
         isAdminManagerResult,

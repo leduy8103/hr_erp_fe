@@ -82,7 +82,7 @@ const PayrollItem = ({ payroll, onViewDetails, onDelete, onUpdate, isAdmin = fal
         <div className="text-sm text-gray-900">{formatCurrency(payroll.base_salary)}</div>
       </td>
       <td className="px-6 py-4">
-        <div className="text-sm text-gray-900">{formatCurrency(payroll.net_salary / 12)}</div>
+        <div className="text-sm text-gray-900">{formatCurrency(payroll.net_salary)}</div>
       </td>
       <td className="px-6 py-4">
         <div className="text-sm text-gray-900">{payroll.deductions ? formatCurrency(payroll.deductions) : '-'}</div>
