@@ -46,17 +46,19 @@ const EmployeeProfile = ({ isDarkMode }) => {
       {/* Profile Header */}
       <div className="flex justify-between items-center mb-6 bg-white p-6 rounded-lg shadow-sm dark:bg-gray-800">
         <div className="flex items-center space-x-4">
-          <img
-            src={profile.avatarURL || "https://via.placeholder.com/128"}
-            alt="Profile"
-            className="w-24 h-24 rounded-full object-cover border-4 border-purple-100 dark:border-purple-900"
-          />
+          <div className="w-24 h-24 rounded-full border-4 border-purple-100 dark:border-purple-900 bg-purple-600 flex items-center justify-center">
+            <span className="text-3xl font-bold text-white">
+              {profile.full_name
+                ? profile.full_name.charAt(0).toUpperCase()
+                : ""}
+            </span>
+          </div>
           <div>
             <h2
               className={`text-2xl font-bold ${
                 isDarkMode ? "text-white" : "text-gray-900"
               }`}>
-              {profile.firstName} {profile.lastName}
+              {profile.full_name}
             </h2>
             <p className="text-gray-600 dark:text-gray-300 flex items-center mt-1">
               <svg

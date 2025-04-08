@@ -1,4 +1,3 @@
-// filepath: d:\React\hr-erp-frontend\src\components\payroll\PayrollItem.js
 import React from 'react';
 
 const getInitials = (name) => {
@@ -29,7 +28,7 @@ const getAvatarColor = (name) => {
   return colors[index] || colors[0];
 };
 
-const PayrollItem = ({ payroll, onViewDetails, onDelete }) => {
+const PayrollItem = ({ payroll, onViewDetails, onDelete, onUpdate, isAdmin = false }) => {
   const getStatusClass = (status) => {
     switch (status) {
       case 'Completed':
@@ -60,13 +59,16 @@ const PayrollItem = ({ payroll, onViewDetails, onDelete }) => {
               alt={payroll.employee?.full_name}
               className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
               onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
+                e.target.style.display = "none";
+                e.target.nextSibling.style.display = "flex";
               }}
             />
           ) : (
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium ${getAvatarColor(payroll.employee?.full_name)}`}>
-              {getInitials(payroll.employee?.full_name || 'Unknown User')}
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium ${getAvatarColor(
+                payroll.employee?.full_name
+              )}`}>
+              {getInitials(payroll.employee?.full_name || "Unknown User")}
             </div>
           )}
           <div className="ml-3">
@@ -74,38 +76,58 @@ const PayrollItem = ({ payroll, onViewDetails, onDelete }) => {
               {payroll.employee?.full_name || `ID: ${payroll.employee_id}`}
             </p>
             <p className="text-xs text-gray-500">
-              {payroll.employee?.email || 'N/A'}
+              {payroll.employee?.email || "N/A"}
             </p>
           </div>
         </div>
       </td>
       <td className="px-6 py-4">
-        <div className="text-sm text-gray-900">{formatCurrency(payroll.base_salary)}</div>
+        <div className="text-sm text-gray-900">
+          {formatCurrency(payroll.base_salary)}
+        </div>
       </td>
       <td className="px-6 py-4">
-        <div className="text-sm text-gray-900">{formatCurrency(payroll.net_salary / 12)}</div>
+        <div className="text-sm text-gray-900">
+          {formatCurrency(payroll.net_salary)}
+        </div>
       </td>
       <td className="px-6 py-4">
-        <div className="text-sm text-gray-900">{payroll.deductions ? formatCurrency(payroll.deductions) : '-'}</div>
+        <div className="text-sm text-gray-900">
+          {payroll.deductions ? formatCurrency(payroll.deductions) : "-"}
+        </div>
       </td>
       <td className="px-6 py-4">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(payroll.status || 'Pending')}`}>
-          {payroll.status || 'Pending'}
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(
+            payroll.status || "Pending"
+          )}`}>
+          {payroll.status || "Pending"}
         </span>
       </td>
       <td className="px-6 py-4 text-right">
-        <button
-          onClick={() => onViewDetails(payroll)}
-          className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-        >
-          View Details
-        </button>
-        <button
-          className="text-red-600 hover:underline"
-          onClick={() => onDelete(payroll.id)}
-        >
-          Xóa
-        </button>
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={() => onViewDetails(payroll)}
+            className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors">
+            Details
+          </button>
+
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => onUpdate(payroll)}
+                className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors">
+                Edit
+              </button>
+
+              <button
+                onClick={() => onDelete(payroll.id)}
+                className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition-colors">
+                Delete
+              </button>
+            </>
+          )}
+        </div>
       </td>
     </tr>
   );
