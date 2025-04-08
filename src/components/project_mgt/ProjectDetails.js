@@ -235,7 +235,7 @@ const ProjectDetails = () => {
   // Check if user has manager permissions
   const isManager =
     project &&
-    ((project.manager_id === userId && userRole === "Admin") ||
+    (project.manager_id === userId ||
       userRole === "Admin" ||
       userRole === "admin");
 
@@ -244,8 +244,9 @@ const ProjectDetails = () => {
 
   // Open dialog to add members
   const handleAddMemberClick = async () => {
-    if (!isAdmin) {
-      alert("Only administrators can modify project members.");
+    if (!isManager) {
+      // Allow both admin and manager
+      alert("Only administrators or managers can modify project members.");
       return;
     }
 
@@ -266,8 +267,9 @@ const ProjectDetails = () => {
 
   // Add members to the project
   const handleAddMember = async () => {
-    if (!isAdmin) {
-      alert("Only administrators can modify project members.");
+    if (!isManager) {
+      // Allow both admin and manager
+      alert("Only administrators or managers can modify project members.");
       return;
     }
 
@@ -363,8 +365,9 @@ const ProjectDetails = () => {
 
   // Handle new task added
   const handleTaskAdded = () => {
-    if (!isAdmin) {
-      alert("Only administrators can add tasks.");
+    if (!isManager) {
+      // Allow both admin and manager
+      alert("Only administrators or managers can add tasks.");
       return;
     }
     // Refresh the task list by updating the refresh key

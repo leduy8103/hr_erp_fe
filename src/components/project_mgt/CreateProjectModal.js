@@ -20,17 +20,19 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, isEditing = fal
   useEffect(() => {
     if (isOpen) {
       fetchManagers();
-      
+
       // If editing, initialize form with project data
       if (isEditing && projectData) {
         setFormData({
-          name: projectData.name || '',
-          description: projectData.description || '',
-          start_date: projectData.start_date || '',
-          end_date: projectData.end_date || '',
-          manager_id: projectData.manager_id ? projectData.manager_id.toString() : ''
+          name: projectData.name || "",
+          description: projectData.description || "",
+          start_date: projectData.start_date || "",
+          end_date: projectData.end_date || "",
+          manager_id: projectData.manager_id
+            ? projectData.manager_id.toString()
+            : "",
         });
-        
+
         // Set current manager name if it exists
         if (projectData.managerName) {
           setCurrentManagerName(projectData.managerName);
@@ -45,10 +47,11 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, isEditing = fal
       const token = authService.getToken();
       const managersData = await employeeService.getManagers(token);
       setManagers(managersData);
+      console.log(managersData);
       setLoadingManagers(false);
     } catch (err) {
-      console.error('Error fetching managers:', err);
-      setError('Failed to load managers. Please try again.');
+      console.error("Error fetching managers:", err);
+      setError("Failed to load managers. Please try again.");
       setLoadingManagers(false);
     }
   };
@@ -57,10 +60,15 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, isEditing = fal
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
+
+    // Log manager_id when it changes
+    if (name === "manager_id") {
+      console.log("Selected manager_id:", value);
+    }
   };
 
   const formatDateForDatabase = (dateString) => {
@@ -76,51 +84,67 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, isEditing = fal
     try {
       setLoading(true);
       setError(null);
-      
+
       const token = authService.getToken();
-      
-      // Parse manager_id to integer
-      let managerId = null;
-      if (formData.manager_id) {
-        const parsed = parseInt(formData.manager_id, 10);
-        managerId = !isNaN(parsed) ? parsed : formData.manager_id;
+
+      // Validate manager_id format (adjusted to allow valid IDs)
+      if (formData.manager_id && !/^[\w-]+$/.test(formData.manager_id)) {
+        throw new Error(
+          "Invalid manager ID format. Please select a valid manager."
+        );
       }
-      
-      // Prepare project data with properly formatted dates
+
+      // Prepare project data
       const processedProjectData = {
         name: formData.name,
         description: formData.description,
         start_date: formatDateForDatabase(formData.start_date),
         end_date: formatDateForDatabase(formData.end_date),
-        manager_id: managerId,
-        assign_to_manager: true
+        manager_id: formData.manager_id,
       };
-      
+
       let result;
       if (isEditing) {
         console.log("Updating project:", projectData.id, processedProjectData);
-        result = await projectService.updateProject(projectData.id, processedProjectData, token);
+        result = await projectService.updateProject(
+          projectData.id,
+          processedProjectData,
+          token
+        );
       } else {
         console.log("Creating new project:", processedProjectData);
-        result = await projectService.createProject(processedProjectData, token);
+        result = await projectService.createProject(
+          processedProjectData,
+          token
+        );
       }
-      
+
       // Fetch the manager's name to include with the project data
       if (result && result.manager_id) {
         try {
-          const managerName = await employeeService.getEmployeeNameById(result.manager_id);
+          const managerName = await employeeService.getEmployeeNameById(
+            result.manager_id
+          );
           result.managerName = managerName;
         } catch (nameError) {
           console.error("Error fetching manager name:", nameError);
         }
       }
-      
+
       setLoading(false);
       onProjectCreated(result);
       onClose();
     } catch (err) {
-      console.error(isEditing ? 'Error updating project:' : 'Error creating project:', err);
-      setError(isEditing ? 'Failed to update project. Please try again.' : 'Failed to create project. Please try again.');
+      console.error(
+        isEditing ? "Error updating project:" : "Error creating project:",
+        err
+      );
+      setError(
+        err.message ||
+          (isEditing
+            ? "Failed to update project. Please try again."
+            : "Failed to create project. Please try again.")
+      );
       setLoading(false);
     }
   };

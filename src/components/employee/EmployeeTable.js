@@ -18,38 +18,35 @@ const EmployeeTable = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [activeTab, setActiveTab] = useState("all"); // 'all' or 'blocked'
+  const [selectedUserId, setSelectedUserId] = useState(null); // Thêm state để lưu user_id
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Get current user info
       const user = authService.getCurrentUser();
       setCurrentUser(user);
-
-      // Use getUserRole method to get the user role from the token
       const userRole = authService.getUserRole();
       setIsAdmin(userRole === "Admin");
 
-      // Get all employees
-      const response = await employeeService.getEmployees();
-
-      // Filter out current user from the employees list
-      const currentUserId = authService.getUserIdFromToken();
-      const filteredEmployees = response.filter(
-        (emp) => emp.id !== currentUserId
-      );
-      setEmployees(filteredEmployees);
+      // Fetch appropriate list based on active tab
+      if (activeTab === "blocked") {
+        const blockedUsers = await employeeService.getBlockedUsers();
+        setEmployees(blockedUsers);
+      } else {
+        const response = await employeeService.getEmployees();
+        const currentUserId = authService.getUserIdFromToken();
+        const filteredEmployees = response.filter(
+          (emp) => emp.id !== currentUserId
+        );
+        setEmployees(filteredEmployees);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
-  const [selectedUserId, setSelectedUserId] = useState(null); // Thêm state để lưu user_id
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
@@ -58,32 +55,6 @@ const EmployeeTable = () => {
   const handleEvaluateClick = (userId) => {
     setSelectedUserId(userId); // Lưu user_id của user được chọn
     setIsAddPerformanceReviewModalOpen(true); // Mở modal
-  };
-  // Filter employees based on search term and filters
-  const filteredEmployees = employees.filter(
-    (employee) =>
-      (employee.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.position.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (!filters.selectedDepartments ||
-        filters.selectedDepartments.length === 0 ||
-        filters.selectedDepartments.includes(employee.department)) &&
-      (!filters.selectedrole || filters.selectedrole === employee.role)
-  );
-
-  // Get status badge class based on status
-  const getStatusBadgeClass = (status) => {
-    switch (status.toLowerCase()) {
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "inactive":
-        return "bg-blue-100 text-blue-800";
-      case "resigned":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
   };
 
   const handleEditEmployee = (employee) => {
@@ -128,7 +99,11 @@ const EmployeeTable = () => {
 
   const handleBlockUser = async (employee) => {
     try {
-      await employeeService.blockUser(employee.id);
+      if (activeTab === "blocked") {
+        await employeeService.unblockUser(employee.id);
+      } else {
+        await employeeService.blockUser(employee.id);
+      }
       // Refresh the data to show the updated blocked status
       await fetchData();
     } catch (error) {
@@ -136,10 +111,80 @@ const EmployeeTable = () => {
     }
   };
 
+  const handleDeleteUser = async (employee) => {
+    if (
+      window.confirm(`Are you sure you want to remove ${employee.full_name}?`)
+    ) {
+      try {
+        await employeeService.deleteEmployee(employee.id);
+        await fetchData(); // Refresh the list
+      } catch (error) {
+        console.error("Error deleting employee:", error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [activeTab]); // Re-fetch when tab changes
+
+  // Filter employees based on search term and filters
+  const filteredEmployees = employees.filter(
+    (employee) =>
+      (employee.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.position.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (!filters.selectedDepartments ||
+        filters.selectedDepartments.length === 0 ||
+        filters.selectedDepartments.includes(employee.department)) &&
+      (!filters.selectedrole || filters.selectedrole === employee.role)
+  );
+
+  // Get status badge class based on status
+  const getStatusBadgeClass = (status) => {
+    switch (status.toLowerCase()) {
+      case "active":
+        return "bg-green-100 text-green-800";
+      case "inactive":
+        return "bg-blue-100 text-blue-800";
+      case "resigned":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
   return (
     <div className="p-6 bg-white rounded-xl shadow-lg">
+      {/* Add tabs before the existing header */}
+      <div className="mb-6 border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`${
+              activeTab === "all"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
+            All Employees
+          </button>
+          <button
+            onClick={() => setActiveTab("blocked")}
+            className={`${
+              activeTab === "blocked"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
+            Blocked Users
+          </button>
+        </nav>
+      </div>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">All Employees</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          {activeTab === "all" ? "All Employees" : "Blocked Users"}
+        </h1>
         <div className="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto">
           <div className="relative w-full md:w-64">
             <input
@@ -162,22 +207,6 @@ const EmployeeTable = () => {
             </svg>
           </div>
           <button
-            className="w-full md:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition duration-200 ease-in-out transform hover:scale-105 flex items-center justify-center shadow-md"
-            onClick={() => setIsAddEmployeeModalOpen(true)}>
-            <svg
-              className="h-5 w-5 mr-2"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Add New Employee
-          </button>
-          <button
             className="w-full md:w-auto px-4 py-2.5 border border-gray-300 hover:bg-gray-50 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 flex items-center justify-center shadow-sm"
             onClick={() => setIsFilterModalOpen(true)}>
             <svg
@@ -193,6 +222,24 @@ const EmployeeTable = () => {
             </svg>
             Filter
           </button>
+          {activeTab === "all" && (
+            <button
+              className="w-full md:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition duration-200 ease-in-out transform hover:scale-105 flex items-center justify-center shadow-md"
+              onClick={() => setIsAddEmployeeModalOpen(true)}>
+              <svg
+                className="h-5 w-5 mr-2"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Add New Employee
+            </button>
+          )}
         </div>
       </div>
 
@@ -330,78 +377,111 @@ const EmployeeTable = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex space-x-2">
-                      <button
-                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition duration-200 flex items-center"
-                        onClick={() => handleEvaluateClick(employee.id)}>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 mr-1"
-                          viewBox="0 0 20 20"
-                          fill="currentColor">
-                          <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                          <path
-                            fillRule="evenodd"
-                            d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        Evaluate
-                      </button>
-                      {isAdmin && (
-                        <button
-                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition duration-200 flex items-center"
-                          onClick={() => handleEditEmployee(employee)}>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 mr-1"
-                            viewBox="0 0 20 20"
-                            fill="currentColor">
-                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                          </svg>
-                          Edit
-                        </button>
-                      )}
-                      {isAdmin && (
-                        <button
-                          className={`px-3 py-1.5 ${
-                            employee.is_blocked
-                              ? "bg-green-600 hover:bg-green-700"
-                              : "bg-orange-600 hover:bg-orange-700"
-                          } text-white text-sm rounded-lg transition duration-200 flex items-center`}
-                          onClick={() => handleBlockUser(employee)}>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 mr-1"
-                            viewBox="0 0 20 20"
-                            fill="currentColor">
-                            {employee.is_blocked ? (
-                              <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z" />
-                            ) : (
+                      {activeTab === "all" ? (
+                        <>
+                          <button
+                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition duration-200 flex items-center"
+                            onClick={() => handleEvaluateClick(employee.id)}>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              viewBox="0 0 20 20"
+                              fill="currentColor">
+                              <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
                               <path
                                 fillRule="evenodd"
-                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
                                 clipRule="evenodd"
                               />
-                            )}
-                          </svg>
-                          {employee.is_blocked ? "Unblock" : "Block"}
-                        </button>
-                      )}
-                      {isAdmin && (
-                        <button className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition duration-200 flex items-center">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 mr-1"
-                            viewBox="0 0 20 20"
-                            fill="currentColor">
-                            <path
-                              fillRule="evenodd"
-                              d="M10 2a1 1 0 00-1 1v1H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1h-4V3a1 1 0 00-1-1zm-3 5a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1H8a1 1 0 01-1-1V7z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          Remove
-                        </button>
+                            </svg>
+                            Evaluate
+                          </button>
+                          {isAdmin && (
+                            <>
+                              <button
+                                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition duration-200 flex items-center"
+                                onClick={() => handleEditEmployee(employee)}>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4 mr-1"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor">
+                                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                </svg>
+                                Edit
+                              </button>
+                              <button
+                                className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-lg transition duration-200 flex items-center"
+                                onClick={() => handleBlockUser(employee)}>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4 mr-1"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor">
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                Block
+                              </button>
+                              <button
+                                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition duration-200 flex items-center"
+                                onClick={() => handleDeleteUser(employee)}>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4 mr-1"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor">
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M10 2a1 1 0 00-1 1v1H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1h-4V3a1 1 0 00-1-1zm-3 5a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1H8a1 1 0 01-1-1V7z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                Remove
+                              </button>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        isAdmin && (
+                          <>
+                            <button
+                              className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition duration-200 flex items-center"
+                              onClick={() => handleBlockUser(employee)}>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 mr-1"
+                                viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path
+                                  fillRule="evenodd"
+                                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              Unblock
+                            </button>
+                            <button
+                              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition duration-200 flex items-center"
+                              onClick={() => handleDeleteUser(employee)}>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 mr-1"
+                                viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path
+                                  fillRule="evenodd"
+                                  d="M10 2a1 1 0 00-1 1v1H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1h-4V3a1 1 0 00-1-1zm-3 5a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1H8a1 1 0 01-1-1V7z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              Remove
+                            </button>
+                          </>
+                        )
                       )}
                       {!isAdmin && (
                         <button className="px-3 py-1.5 bg-gray-200 text-gray-500 text-sm rounded-lg cursor-not-allowed">

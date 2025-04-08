@@ -1,79 +1,81 @@
-// filepath: d:\React\hr-erp-frontend\src\components\payroll\PayrollForm.js
 import React, { useState, useEffect } from 'react';
 import employeeService from '../../services/employeeService';
-import { createPayroll } from '../../services/payrollService';
+import { createPayroll, updatePayroll } from '../../services/payrollService';
 
-// Tỷ lệ thuế và bảo hiểm theo quy định Việt Nam
-const PERSONAL_INCOME_TAX_RATE = 0.1; // 10% thuế TNCN tạm tính
-const SOCIAL_INSURANCE_RATE = 0.08; // 8% BHXH
-const HEALTH_INSURANCE_RATE = 0.015; // 1.5% BHYT
-const UNEMPLOYMENT_INSURANCE_RATE = 0.01; // 1% BHTN
-const DEFAULT_REGION = 'I'; // Vùng I mặc định (Hà Nội, HCM)
+// Vietnamese tax and insurance rates according to regulations
+const PERSONAL_INCOME_TAX_RATE = 0.1; // 10% PIT estimate
+const SOCIAL_INSURANCE_RATE = 0.08; // 8% Social Insurance
+const HEALTH_INSURANCE_RATE = 0.015; // 1.5% Health Insurance
+const UNEMPLOYMENT_INSURANCE_RATE = 0.01; // 1% Unemployment Insurance
+const DEFAULT_REGION = 'I'; // Region I default (Hanoi, HCM)
 
-// Mức lương tối thiểu vùng (2023)
+// Regional minimum wage (2023)
 const REGIONAL_MIN_WAGE = {
-    'I': 4680000, // Vùng I: Hà Nội, HCM
-    'II': 4160000, // Vùng II
-    'III': 3640000, // Vùng III
-    'IV': 3250000  // Vùng IV
+    'I': 4680000, // Region I: Hanoi, HCM
+    'II': 4160000, // Region II
+    'III': 3640000, // Region III
+    'IV': 3250000  // Region IV
 };
 
-const PayrollForm = ({ onSuccess, onCancel }) => {
+const PayrollForm = ({ onSuccess, onCancel, payrollData }) => {
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
-        employee_id: '',
-        base_salary: '',
-        allowances: '0',
-        additional_deductions: '0', // Đổi tên từ deductions thành additional_deductions
-        pay_period: 'Monthly',
-        region: DEFAULT_REGION
+        employee_id: payrollData?.employee_id || '',
+        base_salary: payrollData?.base_salary || '',
+        allowances: payrollData?.allowances || '0',
+        additional_deductions: payrollData?.deductions || '0',
+        pay_period: payrollData?.pay_period || 'Monthly',
+        region: payrollData?.region || DEFAULT_REGION
     });
     const [calculations, setCalculations] = useState({
-        social_insurance: 0,
-        health_insurance: 0,
-        unemployment_insurance: 0,
-        personal_income_tax: 0,
-        total_deductions: 0,
-        net_salary: 0
+        social_insurance: payrollData?.social_insurance || 0,
+        health_insurance: payrollData?.health_insurance || 0,
+        unemployment_insurance: payrollData?.unemployment_insurance || 0,
+        personal_income_tax: payrollData?.personal_income_tax || 0,
+        total_deductions: payrollData?.total_deductions || 0,
+        net_salary: payrollData?.net_salary || 0
     });
+
+    // Check if in edit mode
+    const isEditMode = !!payrollData;
 
     useEffect(() => {
         fetchEmployees();
     }, []);
 
     useEffect(() => {
-        // Tính toán thuế, bảo hiểm, khấu trừ và lương thực nhận
+        // Calculate tax, insurance, deductions, and net salary
         if (formData.base_salary) {
             const baseSalary = parseFloat(formData.base_salary) || 0;
             const allowances = parseFloat(formData.allowances) || 0;
             const additionalDeductions = parseFloat(formData.additional_deductions) || 0;
 
-            // Phần lương đóng BHXH (tối đa 20 lần lương cơ sở)
+            // Salary for social insurance (maximum 20 times regional minimum wage)
             const maxSocialInsuranceSalary = 20 * REGIONAL_MIN_WAGE[formData.region];
             const socialInsuranceSalary = Math.min(baseSalary, maxSocialInsuranceSalary);
 
-            // Tính các khoản bảo hiểm
+            // Calculate insurance amounts
             const socialInsurance = socialInsuranceSalary * SOCIAL_INSURANCE_RATE;
             const healthInsurance = socialInsuranceSalary * HEALTH_INSURANCE_RATE;
             const unemploymentInsurance = socialInsuranceSalary * UNEMPLOYMENT_INSURANCE_RATE;
 
-            // Tổng bảo hiểm
+            // Total insurance
             const totalInsurance = socialInsurance + healthInsurance + unemploymentInsurance;
 
-            // Thu nhập chịu thuế = lương cơ bản + phụ cấp - bảo hiểm - giảm trừ gia cảnh
-            // Giả định giảm trừ gia cảnh 11 triệu cho bản thân
+            // Taxable income = base salary + allowances - insurance - personal reduction
+            // Assume personal reduction of 11 million for self
             const personalReduction = 11000000;
             const taxableIncome = Math.max(0, baseSalary + allowances - totalInsurance - personalReduction);
 
-            // Tạm tính thuế TNCN theo mức 10% 
+            // Estimate PIT at 10%
             const personalIncomeTax = taxableIncome * PERSONAL_INCOME_TAX_RATE;
 
-            // Tổng khấu trừ = bảo hiểm + thuế TNCN + khấu trừ khác
+            // Total deductions = insurance + PIT + other deductions
             const totalDeductions = totalInsurance + personalIncomeTax + additionalDeductions;
 
-            // Lương thực nhận
+            // Net salary
             const netSalary = baseSalary + allowances - totalDeductions;
 
             setCalculations({
@@ -94,13 +96,13 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
             if (response && Array.isArray(response)) {
                 setEmployees(response);
             } else {
-                console.error('Không lấy được danh sách nhân viên:', response);
-                setError('Không thể tải danh sách nhân viên');
+                console.error('Failed to fetch employee list:', response);
+                setError('Unable to load employee list');
             }
             setLoading(false);
         } catch (err) {
-            console.error('Lỗi khi lấy danh sách nhân viên:', err);
-            setError('Không thể tải danh sách nhân viên. Vui lòng thử lại.');
+            console.error('Error fetching employee list:', err);
+            setError('Unable to load employee list. Please try again.');
             setLoading(false);
         }
     };
@@ -125,59 +127,60 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
         e.preventDefault();
         setError('');
 
-        // Kiểm tra form
+        // Form validation
         if (!formData.employee_id) {
-            setError('Vui lòng chọn nhân viên');
+            setError('Please select an employee');
             return;
         }
 
         if (!formData.base_salary || parseFloat(formData.base_salary) <= 0) {
-            setError('Vui lòng nhập mức lương hợp lệ');
+            setError('Please enter a valid salary');
             return;
         }
 
-        // Kiểm tra lương tối thiểu vùng
+        // Check regional minimum wage
         if (parseFloat(formData.base_salary) < REGIONAL_MIN_WAGE[formData.region]) {
-            setError(`Lương không được thấp hơn mức lương tối thiểu vùng (${formatCurrency(REGIONAL_MIN_WAGE[formData.region])})`);
+            setError(`Salary cannot be lower than regional minimum wage (${formatCurrency(REGIONAL_MIN_WAGE[formData.region])})`);
             return;
         }
 
         try {
             setLoading(true);
 
-            // Chuẩn bị dữ liệu
-            const payrollData = {
-                employee_id: formData.employee_id, // Đảm bảo trường này đúng với backend
+            // Prepare data
+            const payload = {
+                employee_id: formData.employee_id,
                 base_salary: parseFloat(formData.base_salary),
                 allowances: parseFloat(formData.allowances) || 0,
                 deductions: parseFloat(formData.additional_deductions) || 0,
                 social_insurance: Math.round(calculations.social_insurance),
                 health_insurance: Math.round(calculations.health_insurance),
                 unemployment_insurance: Math.round(calculations.unemployment_insurance),
-                personal_income_tax: Math.round(calculations.personal_income_tax),
+                personal_income_tax: Math.round(calculations.personal_income_tax), 
                 total_deductions: Math.round(calculations.total_deductions),
                 net_salary: Math.round(calculations.net_salary),
                 pay_period: formData.pay_period,
                 region: formData.region,
-                status: 'Pending' // Đặt trạng thái mặc định là Chờ xử lý
+                status: payrollData ? payrollData.status : 'Completed'
             };
 
-            console.log('Sending payroll data:', payrollData);
+            console.log(`${isEditMode ? 'Updating' : 'Creating'} payroll data:`, payload);
 
-            const response = await createPayroll(payrollData);
-
-            // Make sure we're passing the correct data structure to onSuccess
-            if (response && response.data) {
-                onSuccess(response.data);
-            } else if (response) {
-                // If response exists but doesn't have a data property, assume the response itself is the data
-                onSuccess(response);
+            let response;
+            if (isEditMode) {
+                response = await updatePayroll(payrollData.id, payload);
             } else {
-                throw new Error('Invalid response from server');
+                response = await createPayroll(payload);
+            }
+
+            if (response.success) {
+                onSuccess(response.data);
+            } else {
+                throw new Error(response.message || 'Operation failed');
             }
         } catch (err) {
-            console.error('Lỗi khi tạo bảng lương:', err);
-            setError(err.message || 'Đã xảy ra lỗi khi tạo bảng lương');
+            console.error(`Error ${isEditMode ? 'updating' : 'creating'} payroll:`, err);
+            setError(err.message || `An error occurred while ${isEditMode ? 'updating' : 'creating'} payroll`);
         } finally {
             setLoading(false);
         }
@@ -185,7 +188,9 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
 
     return (
         <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Tạo Bảng Lương Mới</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {isEditMode ? 'Update Payroll' : 'Create New Payroll'}
+            </h3>
 
             {error && (
                 <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md">
@@ -195,16 +200,16 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
 
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nhân viên</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
                     <select
                         name="employee_id"
                         value={formData.employee_id}
                         onChange={handleChange}
                         className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={loading}
+                        disabled={loading || isEditMode} // Disable in edit mode
                         required
                     >
-                        <option value="">Chọn nhân viên</option>
+                        <option value="">Select employee</option>
                         {employees.map(employee => (
                             <option key={employee.id} value={employee.id}>
                                 {employee.full_name || `ID: ${employee.id}`}
@@ -214,7 +219,7 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
                 </div>
 
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Vùng lương</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Region</label>
                     <select
                         name="region"
                         value={formData.region}
@@ -222,15 +227,15 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
                         className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={loading}
                     >
-                        <option value="I">Vùng I - Hà Nội, TP HCM (4.680.000đ)</option>
-                        <option value="II">Vùng II (4.160.000đ)</option>
-                        <option value="III">Vùng III (3.640.000đ)</option>
-                        <option value="IV">Vùng IV (3.250.000đ)</option>
+                        <option value="I">Region I - Hanoi, HCM City (4,680,000đ)</option>
+                        <option value="II">Region II (4,160,000đ)</option>
+                        <option value="III">Region III (3,640,000đ)</option>
+                        <option value="IV">Region IV (3,250,000đ)</option>
                     </select>
                 </div>
 
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Lương cơ bản</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Base Salary</label>
                     <div className="relative">
                         <input
                             type="number"
@@ -249,12 +254,12 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
                         </div>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                        Tối thiểu: {formatCurrency(REGIONAL_MIN_WAGE[formData.region])}
+                        Minimum: {formatCurrency(REGIONAL_MIN_WAGE[formData.region])}
                     </p>
                 </div>
 
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phụ cấp</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Allowances</label>
                     <div className="relative">
                         <input
                             type="number"
@@ -274,7 +279,7 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
                 </div>
 
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Khấu trừ khác</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Other Deductions</label>
                     <div className="relative">
                         <input
                             type="number"
@@ -294,7 +299,7 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
                 </div>
 
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Kỳ lương</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Pay Period</label>
                     <select
                         name="pay_period"
                         value={formData.pay_period}
@@ -302,38 +307,38 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
                         className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={loading}
                     >
-                        <option value="Monthly">Hàng tháng</option>
-                        <option value="Bi-Weekly">Hai tuần</option>
-                        <option value="Weekly">Hàng tuần</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Bi-Weekly">Bi-Weekly</option>
+                        <option value="Weekly">Weekly</option>
                     </select>
                 </div>
 
-                {/* Bảng tính toán */}
+                {/* Calculation table */}
                 {formData.base_salary && (
                     <div className="mb-6 p-4 bg-gray-50 rounded-md">
-                        <h4 className="font-medium text-gray-700 mb-2">Bảng tính lương</h4>
+                        <h4 className="font-medium text-gray-700 mb-2">Salary Calculation</h4>
                         <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div className="text-gray-600">BHXH ({SOCIAL_INSURANCE_RATE * 100}%):</div>
+                            <div className="text-gray-600">Social Insurance ({SOCIAL_INSURANCE_RATE * 100}%):</div>
                             <div className="text-right">{formatCurrency(calculations.social_insurance)}</div>
 
-                            <div className="text-gray-600">BHYT ({HEALTH_INSURANCE_RATE * 100}%):</div>
+                            <div className="text-gray-600">Health Insurance ({HEALTH_INSURANCE_RATE * 100}%):</div>
                             <div className="text-right">{formatCurrency(calculations.health_insurance)}</div>
 
-                            <div className="text-gray-600">BHTN ({UNEMPLOYMENT_INSURANCE_RATE * 100}%):</div>
+                            <div className="text-gray-600">Unemployment Insurance ({UNEMPLOYMENT_INSURANCE_RATE * 100}%):</div>
                             <div className="text-right">{formatCurrency(calculations.unemployment_insurance)}</div>
 
-                            <div className="text-gray-600">Thuế TNCN (tạm tính):</div>
+                            <div className="text-gray-600">PIT (estimate):</div>
                             <div className="text-right">{formatCurrency(calculations.personal_income_tax)}</div>
 
-                            <div className="text-gray-600">Khấu trừ khác:</div>
+                            <div className="text-gray-600">Other Deductions:</div>
                             <div className="text-right">{formatCurrency(parseFloat(formData.additional_deductions || 0))}</div>
 
-                            <div className="text-gray-600 font-medium">Tổng khấu trừ:</div>
+                            <div className="text-gray-600 font-medium">Total Deductions:</div>
                             <div className="text-right font-medium">{formatCurrency(calculations.total_deductions)}</div>
 
                             <div className="border-t border-gray-200 col-span-2 my-1"></div>
 
-                            <div className="text-gray-800 font-medium">Lương thực nhận:</div>
+                            <div className="text-gray-800 font-medium">Net Salary:</div>
                             <div className="text-right font-medium">{formatCurrency(calculations.net_salary)}</div>
                         </div>
                     </div>
@@ -346,7 +351,7 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
                         className="px-4 py-2 border rounded-md hover:bg-gray-50 transition-colors"
                         disabled={loading}
                     >
-                        Hủy
+                        Cancel
                     </button>
                     <button
                         type="submit"
@@ -359,7 +364,7 @@ const PayrollForm = ({ onSuccess, onCancel }) => {
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         )}
-                        {loading ? 'Đang tạo...' : 'Tạo bảng lương'}
+                        {loading ? 'Processing...' : isEditMode ? 'Update' : 'Create Payroll'}
                     </button>
                 </div>
             </form>
