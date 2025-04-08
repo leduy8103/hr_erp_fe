@@ -1,31 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import employeeService from '../../services/employeeService';
-import AddEmployeeModal from './AddEmployeeModal';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import ChangePasswordTab from "./ChangePasswordTab";
 
 const EmployeeProfile = ({ isDarkMode }) => {
   const [profile, setProfile] = useState(null);
-  const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('Personal Information');
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("Personal Information");
   const navigate = useNavigate();
-  const { id } = useParams(); // Get the employee ID from the URL
+  const { id } = useParams();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const data = await employeeService.getCurrentUserProfile(id); // Pass the id parameter
+        const data = await employeeService.getCurrentUserProfile(id);
         setProfile(data);
       } catch (error) {
-        setError('Error fetching profile: ' + error.message);
-        console.error('Error fetching profile:', error);
+        setError("Error fetching profile: " + error.message);
+        console.error("Error fetching profile:", error);
       }
     };
 
     fetchProfile();
   }, [id]);
 
-  const tabs = ["Personal Information", "Professional Information"];
+  const tabs = [
+    "Personal Information",
+    "Professional Information",
+    "Change Password",
+  ];
 
   if (!profile) {
     return (
@@ -35,26 +40,9 @@ const EmployeeProfile = ({ isDarkMode }) => {
     );
   }
 
-  const handleEditProfile = () => {
-    setIsEditModalOpen(true);
-  };
-
-  const handleModalClose = () => {
-    setIsEditModalOpen(false);
-  };
-
-  const handleProfileUpdate = async (updatedProfile) => {
-    try {
-      await employeeService.updateEmployeeProfile(id, updatedProfile);
-      setProfile(updatedProfile);
-      setIsEditModalOpen(false);
-    } catch (error) {
-      console.error("Error updating profile:", error);
-    }
-  };
-
   return (
     <div className="max-w-6xl mx-auto px-4">
+      <ToastContainer />
       {/* Profile Header */}
       <div className="flex justify-between items-center mb-6 bg-white p-6 rounded-lg shadow-sm dark:bg-gray-800">
         <div className="flex items-center space-x-4">
@@ -97,23 +85,6 @@ const EmployeeProfile = ({ isDarkMode }) => {
             </div>
           </div>
         </div>
-        <button
-          className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-200 flex items-center shadow-sm"
-          onClick={handleEditProfile}>
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"
-            />
-          </svg>
-          Edit Profile
-        </button>
       </div>
 
       {/* Tabs */}
@@ -313,14 +284,9 @@ const EmployeeProfile = ({ isDarkMode }) => {
           </div>
         </div>
       )}
-
-      {/* Edit Employee Modal */}
-      <AddEmployeeModal
-        isOpen={isEditModalOpen}
-        onRequestClose={handleModalClose}
-        initialFormData={profile}
-        onSubmit={handleProfileUpdate}
-      />
+      {activeTab === "Change Password" && (
+        <ChangePasswordTab isDarkMode={isDarkMode} />
+      )}
     </div>
   );
 };
