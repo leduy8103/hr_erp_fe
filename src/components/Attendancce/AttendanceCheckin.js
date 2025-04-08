@@ -346,22 +346,47 @@ const AttendancePage = () => {
               </thead>
               <tbody>
                 {attendanceHistory.length > 0 ? (
-                  attendanceHistory.map((record, index) => (
-                    <tr 
-                      key={index} 
-                      className={`${index === 0 ? 'bg-indigo-500 text-white rounded-lg' : ''}`}
-                    >
-                      <td className="py-4 px-4 font-medium flex items-center gap-2">
-                        <div className="rounded-full bg-white p-1">
-                          <Clock size={18} className={index === 0 ? 'text-indigo-500' : 'text-black'} />
-                        </div>
-                        {formatDate(record.day)}
-                      </td>
-                      <td className="py-4 px-4 text-center">{formatTime(record.checkInTime)}</td>
-                      <td className="py-4 px-4 text-center">{record.checkOutTime === 'Working...' ? 'Working...' : formatTime(record.checkOutTime)}</td>
-                      <td className="py-4 px-4 text-right">{record.status}</td>
-                    </tr>
-                  ))
+                  attendanceHistory
+                    .slice(
+                      (currentPage - 1) * itemsPerPage, 
+                      currentPage * itemsPerPage
+                    )
+                    .map((record, index) => {
+                      const absoluteIndex = (currentPage - 1) * itemsPerPage + index;
+                      
+                      // Define status color
+                      let statusColor = "text-gray-600"; // Default color
+                      if (record.status === "Late") {
+                        statusColor = "text-red-600 font-medium";
+                      } else if (record.status === "On Time" || record.status === "On-Time") {
+                        statusColor = "text-green-600 font-medium";
+                      } else if (record.status === "Absent") {
+                        statusColor = "text-yellow-600 font-medium";
+                      } else if (record.status === "Leave" || record.status === "On Leave") {
+                        statusColor = "text-blue-600 font-medium";
+                      } else if (record.status === "Working...") {
+                        statusColor = "text-indigo-600 font-medium";
+                      }
+                      
+                      return (
+                        <tr 
+                          key={absoluteIndex} 
+                          className={`${absoluteIndex === 0 ? 'bg-indigo-500 text-white rounded-lg' : ''}`}
+                        >
+                          <td className="py-4 px-4 font-medium flex items-center gap-2">
+                            <div className="rounded-full bg-white p-1">
+                              <Clock size={18} className={absoluteIndex === 0 ? 'text-indigo-500' : 'text-black'} />
+                            </div>
+                            {formatDate(record.day)}
+                          </td>
+                          <td className="py-4 px-4 text-center">{formatTime(record.checkInTime)}</td>
+                          <td className="py-4 px-4 text-center">{record.checkOutTime === 'Working...' ? 'Working...' : formatTime(record.checkOutTime)}</td>
+                          <td className={`py-4 px-4 text-right ${absoluteIndex === 0 && record.status !== "Working..." ? 'text-white' : statusColor}`}>
+                            {record.status}
+                          </td>
+                        </tr>
+                      );
+                    })
                 ) : (
                   <tr>
                     <td colSpan="4" className="py-4 px-4 text-center text-gray-500">
@@ -379,7 +404,10 @@ const AttendancePage = () => {
                 <span>Showing</span>
                 <select 
                   value={itemsPerPage} 
-                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1); // Reset to first page when changing items per page
+                  }}
                   className="border rounded p-1"
                 >
                   <option value="10">10</option>
@@ -389,38 +417,41 @@ const AttendancePage = () => {
               </div>
               
               <div>
-                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, attendanceHistory.length)} out of {attendanceHistory.length} records
+                {attendanceHistory.length > 0 ? (
+                  `Showing ${Math.min((currentPage - 1) * itemsPerPage + 1, attendanceHistory.length)} to ${Math.min(currentPage * itemsPerPage, attendanceHistory.length)} out of ${attendanceHistory.length} records`
+                ) : (
+                  "No records to show"
+                )}
               </div>
               
               <div className="flex items-center gap-2">
                 <button 
                   onClick={handlePrevPage} 
                   disabled={currentPage === 1}
-                  className="p-1 rounded border"
+                  className="p-1 rounded border disabled:opacity-50"
                 >
                   <ChevronLeft size={16} />
                 </button>
                 
-                <button className="h-8 w-8 rounded-full bg-indigo-500 text-white flex items-center justify-center">
-                  1
-                </button>
-                
-                <button className="h-8 w-8 rounded-full text-gray-600 flex items-center justify-center">
-                  2
-                </button>
-                
-                <button className="h-8 w-8 rounded-full text-gray-600 flex items-center justify-center">
-                  3
-                </button>
-                
-                <button className="h-8 w-8 rounded-full text-gray-600 flex items-center justify-center">
-                  4
-                </button>
+                {/* Generate page buttons dynamically */}
+                {Array.from({ length: Math.min(4, Math.ceil(attendanceHistory.length / itemsPerPage)) }, (_, index) => (
+                  <button 
+                    key={index + 1}
+                    onClick={() => setCurrentPage(index + 1)}
+                    className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                      currentPage === index + 1 
+                        ? 'bg-indigo-500 text-white' 
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
                 
                 <button 
                   onClick={handleNextPage}
                   disabled={currentPage >= Math.ceil(attendanceHistory.length / itemsPerPage)}
-                  className="p-1 rounded border"
+                  className="p-1 rounded border disabled:opacity-50"
                 >
                   <ChevronRight size={16} />
                 </button>

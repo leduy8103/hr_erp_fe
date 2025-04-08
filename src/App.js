@@ -19,6 +19,8 @@ import LeaveApprovalPage from "./pages/LeaveApprovalPage";
 import AttendancePage from "./pages/Attendance";
 import PayrollPage from "./pages/PayrollPage";
 import ChatBox from './components/ChatBox';
+import { ThemeProvider } from './context/ThemeContext';
+import ThemeToggle from './components/common/ThemeToggle';
 
 function App() {
   // Debug: Log user info to check if role is correctly saved
@@ -101,111 +103,116 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="App">
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/dashboard"
-            element={
-              isAuthenticated() ? <Dashboard /> : <Navigate to="/login" />
-            }
-          />
-          <Route
-            path="/my-tasks"
-            element={
-              isAuthenticated() ? <MyTasksPage /> : <Navigate to="/login" />
-            }
-          />
-          <Route
-            path="/employees"
-            element={
-              isAuthenticated() ? (
-                hasRole("Admin") ? (
-                  <AllEmployees />
+    <ThemeProvider>
+      <Router>
+        <div className="min-h-screen bg-background text-foreground">
+          <div className="fixed top-4 right-4 z-50">
+            <ThemeToggle />
+          </div>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/dashboard"
+              element={
+                isAuthenticated() ? <Dashboard /> : <Navigate to="/login" />
+              }
+            />
+            <Route
+              path="/my-tasks"
+              element={
+                isAuthenticated() ? <MyTasksPage /> : <Navigate to="/login" />
+              }
+            />
+            <Route
+              path="/employees"
+              element={
+                isAuthenticated() ? (
+                  hasRole("Admin") ? (
+                    <AllEmployees />
+                  ) : (
+                    <Forbiden message="Only administrators can access employee management." />
+                  )
                 ) : (
-                  <Forbiden message="Only administrators can access employee management." />
+                  <Navigate to="/login" />
                 )
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
-          <Route
-            path="/leave-request"
-            element={
-              isAuthenticated() ? (
-                <LeaveRequestPage />
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
-          <Route
-            path="/leave-approval"
-            element={
-              isAuthenticated() ? (
-                isAdminOrManager() ? (
-                  <LeaveApprovalPage />
+              }
+            />
+            <Route
+              path="/leave-request"
+              element={
+                isAuthenticated() ? (
+                  <LeaveRequestPage />
                 ) : (
-                  <Forbiden message="Only managers and administrators can approve leave requests." />
+                  <Navigate to="/login" />
                 )
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
-          <Route
-            path="/payroll"
-            element={
-              isAuthenticated() ? (
-                isAdminOrAccountant() ? (
-                  <PayrollPage />
+              }
+            />
+            <Route
+              path="/leave-approval"
+              element={
+                isAuthenticated() ? (
+                  isAdminOrManager() ? (
+                    <LeaveApprovalPage />
+                  ) : (
+                    <Forbiden message="Only managers and administrators can approve leave requests." />
+                  )
                 ) : (
-                  <Forbiden message="Only accountants and administrators can access payroll information." />
+                  <Navigate to="/login" />
                 )
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
-          <Route
-            path="/projects/*"
-            element={
-              isAuthenticated() ? (
-                isAdminOrManager() ? (
-                  <Project />
+              }
+            />
+            <Route
+              path="/payroll"
+              element={
+                isAuthenticated() ? (
+                  isAdminOrAccountant() ? (
+                    <PayrollPage />
+                  ) : (
+                    <Forbiden message="Only accountants and administrators can access payroll information." />
+                  )
                 ) : (
-                  <Forbiden message="Only managers and administrators can access project management." />
+                  <Navigate to="/login" />
                 )
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              isAuthenticated() ? <UserProfilePage /> : <Navigate to="/login" />
-            }
-          />
-          <Route
-            path="/profile/:id"
-            element={
-              isAuthenticated() ? <UserProfilePage /> : <Navigate to="/login" />
-            }
-          />
-          <Route
-            path="/attendance"
-            element={
-              isAuthenticated() ? <AttendancePage /> : <Navigate to="/login" />
-            }
-          />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-        {/* <ChatBox /> */} 
-      </div>
-    </Router>
+              }
+            />
+            <Route
+              path="/projects/*"
+              element={
+                isAuthenticated() ? (
+                  isAdminOrManager() ? (
+                    <Project />
+                  ) : (
+                    <Forbiden message="Only managers and administrators can access project management." />
+                  )
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                isAuthenticated() ? <UserProfilePage /> : <Navigate to="/login" />
+              }
+            />
+            <Route
+              path="/profile/:id"
+              element={
+                isAuthenticated() ? <UserProfilePage /> : <Navigate to="/login" />
+              }
+            />
+            <Route
+              path="/attendance"
+              element={
+                isAuthenticated() ? <AttendancePage /> : <Navigate to="/login" />
+              }
+            />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+          {/* <ChatBox /> */} 
+        </div>
+      </Router>
+    </ThemeProvider>
   );
 }
 
