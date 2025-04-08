@@ -203,24 +203,6 @@ const Sidebar = () => {
           })}
         </ul>
       </nav>
-
-      <div className="p-5 border-t border-gray-200">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-sm font-medium text-gray-700">Theme</span>
-          <button
-            onClick={toggleTheme}
-            className="relative inline-flex items-center h-6 rounded-full w-12 bg-gray-200">
-            <span className="sr-only">Toggle theme</span>
-            <span
-              className={`${
-                darkMode ? "translate-x-6" : "translate-x-1"
-              } inline-block w-4 h-4 transform bg-white shadow rounded-full transition-transform duration-200 ease-in-out`}></span>
-          </button>
-        </div>
-        <div className="text-xs text-gray-500 text-center">
-          v1.0.0 | © 2023 HR ERP
-        </div>
-      </div>
     </div>
   );
 };

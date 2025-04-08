@@ -337,6 +337,7 @@ const ProjectList = () => {
         </h1>
         {isAdmin && (
           <button
+            id="create-project-button"
             className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
             onClick={handleCreateProject}>
             + New Project
