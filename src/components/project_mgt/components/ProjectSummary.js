@@ -14,20 +14,20 @@ const ProjectSummary = ({ project, managerName, progress }) => {
             <span>Manager: {managerName || 'Unassigned'}</span>
           </div>
         </div>
-        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusClass(project.status)}`}>
-          {project.status || 'Not Set'}
+        <span className={`px-3 py-1 rounded-full text-sm font-medium ${Math.round(progress?.percentage || 0) === 100 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+          {Math.round(progress?.percentage || 0) === 100 ? 'Complete' : 'In Progress'}
         </span>
       </div>
       
       <div className="mt-6">
         <div className="flex justify-between items-center mb-1">
           <span className="text-sm font-medium">Progress</span>
-          <span className="text-sm font-bold">{progress ? `${progress.percentage}%` : '0%'}</span>
+          <span className="text-sm font-bold">{Math.round(progress?.percentage || 0)}%</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2.5">
           <div 
             className="bg-blue-600 h-2.5 rounded-full" 
-            style={{ width: `${progress?.percentage || 0}%` }}
+            style={{ width: `${Math.round(progress?.percentage || 0)}%` }}
           ></div>
         </div>
       </div>

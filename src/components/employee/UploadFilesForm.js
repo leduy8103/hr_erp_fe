@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import employeeService from "../../services/employeeService"; // Import the service
+import cdnService from "../../services/cdnService";
 
 const UploadFilesForm = ({
   formData,
@@ -17,17 +17,23 @@ const UploadFilesForm = ({
     if (files.length === 0) return;
 
     try {
-      const userId = String(formData.id); // Ensure userId is a string
+      const userId = formData.id; // Get userId from formData
+      
       if (multiple) {
-        onMultipleFileChange(fieldName, files);
-        for (const file of files) {
-          console.log("Uploading file:", file); // Debugging log
-          await employeeService.uploadFile(userId, file);
-        }
+        const uploadPromises = files.map(file => {
+          const fileFormData = new FormData();
+          fileFormData.append('certificate', file);
+          fileFormData.append('userId', userId);
+          return cdnService.uploadFile(fileFormData, 'certificate');
+        });
+        const results = await Promise.all(uploadPromises);
+        onMultipleFileChange(fieldName, results);
       } else {
-        onFileChange(fieldName, files[0]);
-        console.log("Uploading file:", files[0]); // Debugging log
-        await employeeService.uploadFile(userId, files[0]);
+        const fileFormData = new FormData();
+        fileFormData.append(fieldName, files[0]);
+        fileFormData.append('userId', userId);
+        const url = await cdnService.uploadFile(fileFormData, fieldName);
+        onFileChange(fieldName, url);
       }
     } catch (error) {
       console.error("Error uploading file:", error);

@@ -1,20 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import StatCard from '../StatCard';
 import attendanceService from '../../../services/attendanceService';
 import { getUserLeaveRequests } from '../../../services/leaveService';
+import taskService from '../../../services/taskService';
+import authService from '../../../services/authService';
+import projectService from '../../../services/projectService';
 
 const EmployeeDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
   const [attendance, setAttendance] = useState(null);
   const [leaveHistory, setLeaveHistory] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [attendanceResponse, leaveResponse] = await Promise.all([
+        const userId = authService.getUserIdFromToken();
+        const token = authService.getToken();
+
+        const [attendanceResponse, leaveResponse, tasksResponse] = await Promise.all([
           attendanceService.getCurrentUserAttendance(),
-          getUserLeaveRequests()
+          getUserLeaveRequests(),
+          taskService.getTasksByUser(userId, token)
         ]);
 
         const currentAttendance = Array.isArray(attendanceResponse) ? attendanceResponse[0] : 
@@ -41,6 +51,22 @@ const EmployeeDashboard = () => {
           }))
         );
 
+        const userTasks = Array.isArray(tasksResponse) ? tasksResponse :
+                         (tasksResponse?.data || []);
+        
+        // Get project names for each task
+        const tasksWithProjects = await Promise.all(
+          userTasks
+            .filter(task => !task.is_deleted)
+            .slice(0, 5)
+            .map(async task => ({
+              ...task,
+              project_name: await projectService.getProjectNameById(task.project_id, token)
+            }))
+        );
+        
+        setTasks(tasksWithProjects);
+
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -50,6 +76,17 @@ const EmployeeDashboard = () => {
 
     fetchDashboardData();
   }, []);
+
+  const handleStatClick = (statTitle) => {
+    switch (statTitle) {
+      case 'Leave Requests':
+        navigate('/my-leaves');
+        break;
+      case 'Pending Leaves':
+        navigate('/leave-requests');
+        break;
+    }
+  };
 
   return (
     <>
@@ -79,7 +116,11 @@ const EmployeeDashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, index) => (
-          <StatCard key={index} {...stat} />
+          <StatCard 
+            key={index} 
+            {...stat} 
+            onClick={() => handleStatClick(stat.title)}
+          />
         ))}
       </div>
 
@@ -115,6 +156,48 @@ const EmployeeDashboard = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4">My Tasks</h3>
+          <div className="overflow-x-auto">
+            {tasks.length > 0 ? (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Task</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {tasks.map((task) => (
+                    <tr key={task.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">{task.title}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{task.project_name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {new Date(task.dueDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          task.status === 'Completed' ? 'bg-green-100 text-green-800' : 
+                          task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' : 
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {task.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-gray-500">No tasks assigned</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

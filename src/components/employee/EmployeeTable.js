@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AddEmployeeModal from './AddEmployeeModal';
 import AddPerformanceReviewModal from './AddPerformanceReviewModal';
 import FilterModal from './FilterModal';
@@ -6,6 +7,7 @@ import employeeService from '../../services/employeeService';
 import authService from "../../services/authService"; // Assuming this service exists
 
 const EmployeeTable = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage, setRecordsPerPage] = useState(10);
@@ -98,30 +100,40 @@ const EmployeeTable = () => {
   };
 
   const handleBlockUser = async (employee) => {
-    try {
-      if (activeTab === "blocked") {
-        await employeeService.unblockUser(employee.id);
-      } else {
-        await employeeService.blockUser(employee.id);
+    const action = activeTab === "blocked" ? "unblock" : "block";
+    if (window.confirm(`Are you sure you want to ${action} ${employee.full_name}?`)) {
+      try {
+        if (activeTab === "blocked") {
+          await employeeService.unblockUser(employee.id);
+          alert(`Successfully unblocked ${employee.full_name}`);
+        } else {
+          await employeeService.blockUser(employee.id);
+          alert(`Successfully blocked ${employee.full_name}`);
+        }
+        // Refresh the data to show the updated blocked status
+        await fetchData();
+      } catch (error) {
+        console.error(`Error ${action}ing user:`, error);
+        alert(`Failed to ${action} ${employee.full_name}. Please try again.`);
       }
-      // Refresh the data to show the updated blocked status
-      await fetchData();
-    } catch (error) {
-      console.error("Error blocking/unblocking user:", error);
     }
   };
 
   const handleDeleteUser = async (employee) => {
-    if (
-      window.confirm(`Are you sure you want to remove ${employee.full_name}?`)
-    ) {
+    if (window.confirm(`Are you sure you want to remove ${employee.full_name}?`)) {
       try {
         await employeeService.deleteEmployee(employee.id);
+        alert(`Successfully removed ${employee.full_name}`);
         await fetchData(); // Refresh the list
       } catch (error) {
         console.error("Error deleting employee:", error);
+        alert(`Failed to remove ${employee.full_name}. Please try again.`);
       }
     }
+  };
+
+  const handleViewProfile = (employee) => {
+    navigate(`/profile/${employee.id}`);
   };
 
   useEffect(() => {
@@ -307,7 +319,8 @@ const EmployeeTable = () => {
                   key={index}
                   className="hover:bg-gray-50 transition-colors duration-150">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
+                    <div className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors duration-150" 
+                         onClick={() => handleViewProfile(employee)}>
                       <div className="flex-shrink-0 h-12 w-12">
                         {employee.avatarURL ? (
                           <img
@@ -330,7 +343,7 @@ const EmployeeTable = () => {
                         )}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-semibold text-gray-900">
+                        <div className="text-sm font-semibold text-gray-900 hover:text-blue-600">
                           {employee.full_name}
                         </div>
                         <div className="text-xs text-gray-500">

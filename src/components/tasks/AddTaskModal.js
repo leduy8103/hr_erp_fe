@@ -18,7 +18,7 @@ const AddTaskModal = ({ isOpen, onClose, projectId, onTaskAdded }) => {
   const [assignee, setAssignee] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('Medium');
-  const [status, setStatus] = useState('Not Started');
+  const [status, setStatus] = useState('In Progress');
 
   // Fetch project members for assignee dropdown
   useEffect(() => {
@@ -77,7 +77,7 @@ const AddTaskModal = ({ isOpen, onClose, projectId, onTaskAdded }) => {
       setAssignee('');
       setDueDate('');
       setPriority('Medium');
-      setStatus('Not Started');
+      setStatus('In Progress');
       
       // Notify parent component
       if (onTaskAdded) {
@@ -203,9 +203,7 @@ const AddTaskModal = ({ isOpen, onClose, projectId, onTaskAdded }) => {
                       onChange={(e) => setStatus(e.target.value)}
                       className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="Not Started">Not Started</option>
                       <option value="In Progress">In Progress</option>
-                      <option value="On Hold">On Hold</option>
                       <option value="Completed">Completed</option>
                     </select>
                   </div>

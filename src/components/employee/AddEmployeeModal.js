@@ -27,14 +27,12 @@ const AddEmployeeModal = ({
       isEditMode,
       initialFormData,
     });
-    // Reset form data when modal opens or initialFormData changes
     if (initialFormData) {
       console.log("Setting form data to:", initialFormData);
       setFormData({ ...initialFormData });
     } else if (isOpen && !initialFormData) {
-      // Only reset form when opening for new employee
       console.log("Resetting form data (add mode)");
-      setFormData({});
+      setFormData({ status: "Active" });  // Set default status
     }
   }, [initialFormData, isOpen]);
 
@@ -60,16 +58,19 @@ const AddEmployeeModal = ({
     setIsSubmitting(true);
     try {
       if (isEditMode) {
-        // Update employee
         await onSubmit(formData);
       } else {
-        // Add new employee
-        const newEmployee = await employeeService.addEmployee(formData);
-
+        // Ensure status is Active for new employees
+        const employeeData = {
+          ...formData,
+          status: "Active"
+        };
+        const newEmployee = await employeeService.addEmployee(employeeData);
+        // Send reset password email and handle response
+        const resetResponse = await employeeService.sendResetPasswordEmail(employeeData.email);
+        console.log('Password reset link sent:', resetResponse.message);
         await onSubmit(newEmployee);
       }
-
-      // Reset form and close modal
       setFormData({});
       onRequestClose();
     } catch (error) {

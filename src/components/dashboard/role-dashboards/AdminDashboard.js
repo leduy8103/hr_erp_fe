@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import StatCard from '../StatCard';
 import employeeService from '../../../services/employeeService';
 import projectService from '../../../services/projectService';
@@ -6,6 +7,7 @@ import { getAllLeaveRequests, processLeaveRequest, getLeaveBalance, requestLeave
 import attendanceService from '../../../services/attendanceService';
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
   const [leaveRequests, setLeaveRequests] = useState([]);
@@ -118,6 +120,23 @@ const AdminDashboard = () => {
     fetchDashboardData();
   }, []);
 
+  const handleStatClick = (statTitle) => {
+    switch (statTitle) {
+      case 'Total Employees':
+        navigate('/employees');
+        break;
+      case 'Active Projects':
+        navigate('/projects');
+        break;
+      case 'Pending Leaves':
+        navigate('/leave-requests');
+        break;
+      case 'Present Today':
+        navigate('/attendance');
+        break;
+    }
+  };
+
   const handleLeaveAction = async (requestId, action) => {
     try {
       await processLeaveRequest({
@@ -170,78 +189,100 @@ const AdminDashboard = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
-          <StatCard key={index} {...stat} />
-        ))}
+        {stats.length > 0 ? (
+          stats.map((stat, index) => (
+            <StatCard 
+              key={index} 
+              {...stat} 
+              onClick={() => handleStatClick(stat.title)}
+            />
+          ))
+        ) : (
+          <div className="col-span-4 text-center py-4 bg-gray-50 rounded-lg">
+            <p className="text-gray-500">No statistics available</p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-4">Recent Leave Requests</h3>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {leaveRequests.map((request) => (
-                  <tr key={request.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{request.employee}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{request.type}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{request.from} to {request.to}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                        {request.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button 
-                        onClick={() => handleLeaveAction(request.id, 'approve')}
-                        className="text-green-600 hover:text-green-900 mr-3"
-                      >
-                        Approve
-                      </button>
-                      <button 
-                        onClick={() => handleLeaveAction(request.id, 'reject')}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Reject
-                      </button>
-                    </td>
+            {leaveRequests.length > 0 ? (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {leaveRequests.map((request) => (
+                    <tr key={request.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">{request.employee}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{request.type}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{request.from} to {request.to}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                          {request.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button 
+                          onClick={() => handleLeaveAction(request.id, 'approve')}
+                          className="text-green-600 hover:text-green-900 mr-3"
+                        >
+                          Approve
+                        </button>
+                        <button 
+                          onClick={() => handleLeaveAction(request.id, 'reject')}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Reject
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-gray-500">No pending leave requests</p>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-4">Employee Activity</h3>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recentActivity.map((activity) => (
-                  <tr key={activity.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{activity.employee}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{activity.time}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{activity.date}</td>
+            {recentActivity.length > 0 ? (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {recentActivity.map((activity) => (
+                    <tr key={activity.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">{activity.employee}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{activity.time}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{activity.date}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-gray-500">No recent activity</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

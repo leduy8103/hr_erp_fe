@@ -21,7 +21,14 @@ import PayrollPage from "./pages/PayrollPage";
 import ChatBox from './components/ChatBox';
 import { ThemeProvider } from './context/ThemeContext';
 import ThemeToggle from './components/common/ThemeToggle';
-
+import ResetPasswordForm from './components/employee/ResetPasswordForm';
+import EmployeeProfile from './components/employee/EmployeeProfile';
+import TaskDetailPage from "./pages/TaskDetailPage";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import projectAccessPermission from './utils/projectAccessPermission';
+import { hasRole, isAdminOrManager, isAdminOrAccountant } from './utils/permissionCheck';
+import ForgotPassword from "./components/ForgotPassword";
 
 const AuthenticatedLayout = ({ children }) => {
   return (
@@ -33,9 +40,8 @@ const AuthenticatedLayout = ({ children }) => {
 };
 
 function App() {
-  // Debug: Log user info to check if role is correctly saved
-
   const [isAuth, setIsAuth] = useState(false);
+  const [projectAccess, setProjectAccess] = useState(false);
 
   useEffect(() => {
     const userStr = localStorage.getItem("user");
@@ -44,7 +50,6 @@ function App() {
         const userData = JSON.parse(userStr);
         console.log("Current user data:", userData);
 
-        // Kiểm tra cấu trúc dữ liệu để xác định vai trò
         const role = userData.user?.role || userData.role;
         console.log("Detected user role:", role);
         console.log(
@@ -57,6 +62,17 @@ function App() {
     } else {
       console.log("No user data in localStorage");
     }
+
+    const checkProjectAccess = async () => {
+      if (isAuthenticated()) {
+        const hasAccess = await projectAccessPermission();
+        setProjectAccess(hasAccess);
+      }
+    };
+
+    if (isAuthenticated()) {
+      checkProjectAccess();
+    }
   }, []);
 
   const isAuthenticated = () => {
@@ -65,65 +81,18 @@ function App() {
     return isAuth;
   };
 
-  const hasRole = (role) => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      // Cấu trúc có thể là { role } hoặc { user: { role } }
-      const userRole = userData.user?.role || userData.role;
-      const hasRoleResult = userRole === role;
-      console.log(
-        `hasRole('${role}') check result:`,
-        hasRoleResult,
-        "Detected role:",
-        userRole
-      );
-      return hasRoleResult;
-    } catch (error) {
-      console.error("Error in hasRole:", error);
-      return false;
-    }
-  };
-
-  const isAdminOrAccountant = () => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      const userRole = userData.user?.role || userData.role;
-      return userRole === "Admin" || userRole === "Accountant";
-    } catch (error) {
-      console.error("Error in isAdminOrAccountant:", error);
-      return false;
-    }
-  };
-
-  const isAdminOrManager = () => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      // Cấu trúc có thể là { role } hoặc { user: { role } }
-      const userRole = userData.user?.role || userData.role;
-      const isAdminManagerResult =
-        userRole === "Admin" || userRole === "Manager";
-      console.log(
-        "isAdminOrManager check result:",
-        isAdminManagerResult,
-        "Detected role:",
-        userRole
-      );
-      return isAdminManagerResult;
-    } catch (error) {
-      console.error("Error in isAdminOrManager:", error);
-      return false;
-    }
-  };
-
   return (
     <ThemeProvider>
       <Router>
+        <ToastContainer position="top-right" autoClose={5000} />
         <div className="min-h-screen bg-background text-foreground">
           <div className="fixed top-4 right-4 z-50">
             <ThemeToggle />
           </div>
           <Routes>
+            <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route
               path="/dashboard"
               element={
@@ -198,10 +167,10 @@ function App() {
               path="/projects/*"
               element={
                 isAuthenticated() ? (
-                  isAdminOrManager() ? (
+                  projectAccess ? (
                     <Project />
                   ) : (
-                    <Forbiden message="Only managers and administrators can access project management." />
+                    <Forbiden message="You don't have access to project management." />
                   )
                 ) : (
                   <Navigate to="/login" />
@@ -237,6 +206,18 @@ function App() {
                   <Navigate to="/login" />
                 )
               }
+            />
+            <Route path="/reset-password" element={<ResetPasswordForm />} />
+            <Route path="/employee/:id" element={<EmployeeProfile />} />
+            <Route 
+              path="/tasks/:taskId" 
+              element={
+                isAuthenticated() ? (
+                  <TaskDetailPage />
+                ) : (
+                  <Navigate to="/login" />
+                )
+              } 
             />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

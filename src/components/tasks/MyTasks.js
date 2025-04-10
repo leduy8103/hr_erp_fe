@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 import { FaSearch, FaCalendarAlt, FaCheck, FaTimes, FaBuilding } from 'react-icons/fa';
 import taskService from '../../services/taskService';
@@ -22,6 +22,8 @@ const MyTasks = () => {
   const [editingField, setEditingField] = useState(null);
   const [tempEditValue, setTempEditValue] = useState('');
   const [updatingTask, setUpdatingTask] = useState(false);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMyTasks = async () => {
@@ -134,6 +136,10 @@ const MyTasks = () => {
     }
   };
 
+  const handleRowClick = (taskId) => {
+    navigate(`/tasks/${taskId}`);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[50vh]">
@@ -205,12 +211,20 @@ const MyTasks = () => {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredTasks.map((task) => (
-                  <tr key={task.id} className="hover:bg-gray-50">
+                  <tr 
+                    key={task.id} 
+                    className="hover:bg-gray-50 cursor-pointer transition duration-150"
+                    onClick={() => handleRowClick(task.id)}
+                  >
                     <td className="px-6 py-4">
                       <div>
-                        <p className="font-medium text-gray-900">{task.title}</p>
+                        <p className="font-medium text-gray-900 hover:text-blue-600">
+                          {task.title}
+                        </p>
                         {task.description && (
-                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</p>
+                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                            {task.description}
+                          </p>
                         )}
                       </div>
                     </td>
@@ -226,7 +240,7 @@ const MyTasks = () => {
                     
                     <td className="px-6 py-4 whitespace-nowrap">
                       {editingId === task.id && editingField === 'status' ? (
-                        <div className="flex items-center">
+                        <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
                           <select
                             value={tempEditValue}
                             onChange={handleFieldChange}
@@ -255,7 +269,10 @@ const MyTasks = () => {
                       ) : (
                         <div 
                           className="text-sm cursor-pointer hover:bg-gray-100 p-1 rounded"
-                          onClick={() => startEditing(task.id, 'status', task.status)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditing(task.id, 'status', task.status);
+                          }}
                         >
                           {task.status.replace('_', ' ')}
                         </div>

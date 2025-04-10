@@ -58,47 +58,54 @@ const AccountDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
-          <StatCard key={index} {...stat} />
-        ))}
+        {stats.length > 0 ? (
+          stats.map((stat, index) => (
+            <StatCard key={index} {...stat} />
+          ))
+        ) : (
+          <div className="col-span-4 text-center py-4 bg-gray-50 rounded-lg">
+            <p className="text-gray-500">No payroll statistics available</p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-4">Recent Payrolls</h3>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recentPayrolls.map((payroll) => (
-                  <tr key={payroll.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{payroll.employee_name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">${payroll.amount.toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        payroll.status === 'Processed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {payroll.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{new Date(payroll.date).toLocaleDateString()}</td>
+            {recentPayrolls.length > 0 ? (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {recentPayrolls.map((payroll) => (
+                    <tr key={payroll.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">{payroll.employee_name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">${payroll.amount.toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          payroll.status === 'Processed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {payroll.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">{new Date(payroll.date).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-gray-500">No recent payroll records</p>
+              </div>
+            )}
           </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Payroll Analytics</h3>
-          {/* Add payroll analytics chart component here */}
         </div>
       </div>
     </>
