@@ -42,7 +42,7 @@ const getPrByUserId = async (id) => {
 
 const updatePr = async (id, employeeData) => {
   try {
-    const response = await api.put(`/api/updatePr`, employeeData);
+    const response = await api.put(`/api/pr/updatePr/${id}`, employeeData);
     return response.data;
   } catch (error) {
     console.error(`Error updating perfomance review :`, error.response?.data || error.message);
@@ -52,7 +52,7 @@ const updatePr = async (id, employeeData) => {
 
 const deletePr = async (id) => {
   try {
-    const response = await api.delete(`/api/deletePr}`);
+    const response = await api.delete(`/api/pr/deletePr/${id}`);
     return response.data;
   } catch (error) {
     console.error(`Error deleting perfomance review :`, error.response?.data || error.message);

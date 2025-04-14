@@ -10,28 +10,40 @@ const PerformanceReviewForm = ({ userId }) => {
     useEffect(() => {
         const fetchReviews = async () => {
             try {
-              const response = await prService.getPrByUserId(userId);
-              // Lấy thông tin reviewer name dựa trên reviewer_id
-              const reviewsWithReviewerNames = await Promise.all(
-                response.map(async (review) => {
-                    try {
-                        const reviewer = await employeeService.getEmployeeById(review.reviewer_id);
-                        return { ...review, reviewer_name: reviewer.full_name };
-                    } catch {
-                        return { ...review, reviewer_name: 'Unknown' }; // Nếu không tìm thấy reviewer
-                    }
-                })
-            );
-              setReviews(reviewsWithReviewerNames);
+                const response = await prService.getPrByUserId(userId);
+                // Lấy thông tin reviewer name dựa trên reviewer_id
+                const reviewsWithReviewerNames = await Promise.all(
+                    response.map(async (review) => {
+                        try {
+                            const reviewer = await employeeService.getEmployeeById(review.reviewer_id);
+                            return { ...review, reviewer_name: reviewer.full_name };
+                        } catch {
+                            return { ...review, reviewer_name: 'Unknown' }; // Nếu không tìm thấy reviewer
+                        }
+                    })
+                );
+                setReviews(reviewsWithReviewerNames);
             } catch (error) {
-              console.error('Error fetching reviews:', error);
-              setError(`Error fetching reviews: ${error.message}`);
+                console.error('Error fetching reviews:', error);
+                setError(`Error fetching reviews: ${error.message}`);
             } finally {
-              setLoading(false);
+                setLoading(false);
             }
-          };
+        };
         fetchReviews();
     }, [userId]);
+
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this performance review?')) {
+            try {
+                await prService.deletePr(id);
+                setReviews(reviews.filter((review) => review.id !== id));
+            } catch (error) {
+                console.error('Error deleting review:', error);
+                alert('Failed to delete the performance review.');
+            }
+        }
+    };
 
     if (loading) {
         return <div>Loading...</div>;
@@ -52,56 +64,91 @@ const PerformanceReviewForm = ({ userId }) => {
     }
 
     return (
-        <div className="space-y-8">
-            <div className="bg-green-50 rounded-md p-4 mb-4">
-                <h3 className="text-sm font-medium text-green-800">Performance Reviews</h3>
-                <p className="text-xs text-green-600 mt-1">
-                    Below is a list of all performance reviews.
-                </p>
-            </div>
+        <div>
+            <div className="space-y-8">
+                <div className="bg-green-50 rounded-md p-4 mb-4">
+                    <h3 className="text-sm font-medium text-green-800">Performance Reviews</h3>
+                    <p className="text-xs text-green-600 mt-1">
+                        Below is a list of all performance reviews.
+                    </p>
+                </div>
 
-            <table className="min-w-full border-collapse border border-gray-300">
-                <thead>
-                    <tr className="bg-gray-100">
-                        <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-700">
-                            Reviewer Name
-                        </th>
-                        <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-700">
-                            Review Date
-                        </th>
-                        <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-700">
-                            Review Period
-                        </th>
-                        <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-700">
-                            Comments
-                        </th>
-                        <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-700">
-                            Performance Rating
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {reviews.map((review) => (
-                        <tr key={review.id} className="hover:bg-gray-50">
-                            <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
-                                {review.reviewer_name}
-                            </td>
-                            <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
-                                {new Date(review.created_at).toLocaleDateString()}
-                            </td>
-                            <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
-                                {review.review_period}
-                            </td>
-                            <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
-                                {review.comments}
-                            </td>
-                            <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
-                                {review.score} / 100
-                            </td>
+                <table className="min-w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr className="bg-gray-100">
+                            <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-700">
+                                Reviewer Name
+                            </th>
+                            <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-700">
+                                Review Date
+                            </th>
+                            <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-700">
+                                Review Period
+                            </th>
+                            <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-700">
+                                Comments
+                            </th>
+                            <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-700">
+                                Performance Rating
+                            </th>
+                            <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-700">
+                                Action
+                            </th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {reviews.map((review) => (
+                            <tr key={review.id} className="hover:bg-gray-50">
+                                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
+                                    {review.reviewer_name}
+                                </td>
+                                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
+                                    {new Date(review.created_at).toLocaleDateString()}
+                                </td>
+                                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
+                                    {review.review_period}
+                                </td>
+                                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
+                                    {review.comments}
+                                </td>
+                                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
+                                    {review.score} / 100
+                                </td>
+                                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
+                                    <button
+                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition duration-200 flex items-center"
+                                        onClick={() => alert('Edit functionality not implemented yet')}>
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4 mr-1"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor">
+                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button
+                                        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition duration-200 flex items-center"
+                                        onClick={() => handleDelete(review.id)}>
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4 mr-1"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor">
+                                            <path
+                                                fillRule="evenodd"
+                                                d="M10 2a1 1 0 00-1 1v1H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1h-4V3a1 1 0 00-1-1zm-3 5a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1H8a1 1 0 01-1-1V7z"
+                                                clipRule="evenodd"
+                                            />
+                                        </svg>
+                                        Remove
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };
