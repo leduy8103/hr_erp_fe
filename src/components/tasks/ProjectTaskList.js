@@ -34,10 +34,10 @@ const ProjectTaskList = ({ projectId, refreshKey = 0 }) => {
         }, {});
         
         setAssigneeNames(namesMap);
-        setLoading(false);
       } catch (err) {
         console.error('Error fetching tasks:', err);
         setError('Failed to load tasks. Please try again.');
+      } finally {
         setLoading(false);
       }
     };

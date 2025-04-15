@@ -1,4 +1,5 @@
 import api from './api';
+import axios from 'axios';
 import authService from './authService';
 
 const addEmployee = async (employeeData) => {
@@ -51,7 +52,8 @@ const getCurrentUserProfile = async () => {
     if (!userId) {
       throw new Error("User ID not found in token");
     }
-    return await getEmployeeById(userId);
+    const response = await api.get(`/api/user/${userId}`);
+    return response.data;
   } catch (error) {
     console.error("Error fetching current user profile:", error);
     throw error;
@@ -174,6 +176,77 @@ const blockUser = async (id) => {
   }
 };
 
+// Unblock user functionality
+const unblockUser = async (id) => {
+  try {
+    const response = await api.put(`/api/user/${id}/unblock`);
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error unblocking user ${id}:`,
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+// Get blocked users functionality
+const getBlockedUsers = async () => {
+  try {
+    const response = await api.get('/api/user/blocked/all');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching blocked users:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const validateResetToken = async (token) => {
+  try {
+    const response = await api.get(`/api/auth/validate-reset-token/${token}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error validating reset token:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const resetPassword = async (data) => {
+  try {
+    const response = await api.post(`/api/auth/reset-password/${data.token}`, {
+      newPassword: data.newPassword
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error resetting password:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const sendResetPasswordEmail = async (email) => {
+  try {
+    const response = await api.post('/api/auth/forgot-password', { email });
+    // The response contains { message, resetLink }
+    return {
+      message: response.data.message,
+      resetLink: response.data.resetLink
+    };
+  } catch (error) {
+    console.error('Error sending reset password email:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const updateProfile = async (userId, profileData) => {
+  try {
+    const response = await api.put(`/api/user/${userId}`, profileData);
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating profile for user ${userId}:`, error);
+    throw error;
+  }
+};
+
 const employeeService = {
   addEmployee,
   getEmployees,
@@ -186,7 +259,13 @@ const employeeService = {
   findEmployeeByEmail,
   getEmployeesByRole,
   getManagers,
-  blockUser, // Add the new function to the exported object
+  blockUser,
+  unblockUser,
+  getBlockedUsers,
+  validateResetToken,
+  resetPassword,
+  sendResetPasswordEmail,
+  updateProfile
 };
 
 export default employeeService;

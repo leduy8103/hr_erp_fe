@@ -1,5 +1,6 @@
 // filepath: d:\React\hr-erp-frontend\src\components\Login.js
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
 
 const styles = `
@@ -17,6 +18,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,6 +28,10 @@ const Login = () => {
     } catch (err) {
       setError("Invalid email or password");
     }
+  };
+
+  const handleForgotPassword = () => {
+    navigate('/forgot-password');
   };
 
   return (
@@ -89,11 +95,13 @@ const Login = () => {
                 />
                 <span className="text-sm text-gray-600">Remember Me</span>
               </label>
-              <a
-                href="/forgot-password"
-                className="text-sm text-blue-500 hover:text-blue-700 hover:underline transition">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-sm text-blue-500 hover:text-blue-700 hover:underline transition"
+              >
                 Forgot Password?
-              </a>
+              </button>
             </div>
 
             {error && (

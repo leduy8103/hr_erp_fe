@@ -67,6 +67,25 @@ const getUserRole = () => {
   return decodedToken ? decodedToken.role || 'employee' : 'employee';
 };
 
+// Add this function before the authService object
+const changePassword = async (currentPassword, newPassword) => {
+  try {
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      throw new Error('User ID not found');
+    }
+    
+    const response = await api.post(`/api/auth/change-password/${userId}`, {
+      currentPassword,
+      newPassword
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Change password error:', error);
+    throw error;
+  }
+};
+
 const authService = {
   login,
   logout,
@@ -75,7 +94,8 @@ const authService = {
   isAuthenticated,
   decodeToken,
   getUserIdFromToken,
-  getUserRole
+  getUserRole,
+  changePassword
 };
 
 export default authService;

@@ -8,7 +8,7 @@ export const getAllPayrolls = async () => {
         const response = await api.get('/api/payroll/all');
         return {
             success: true,
-            data: response.data
+            data: response.data.data
         };
     } catch (error) {
         console.error('Error fetching payrolls:', error);
@@ -98,25 +98,19 @@ export const getPayrollStatistics = async () => {
 // Xuất bảng lương với kiểm tra quyền
 export const exportPayroll = async (employeeId) => {
     try {
-        const userRole = authService.getUserRole();
-        // Nếu là employee, chỉ cho phép xuất bảng lương của chính mình
-        if (userRole === 'Employee') {
-            const userId = authService.getUserIdFromToken();
-            if (employeeId !== userId && employeeId !== 'all') {
-                throw new Error('Unauthorized to export other employee payrolls');
-            }
-        }
-
-        const response = await api.get(`/api/payroll/export/${employeeId}`);
+        const response = await api.get(`/api/payroll/export/${employeeId}`, { responseType: 'blob' });
         return {
             success: true,
-            data: response.data.payroll
+            data: {
+                fileContent: response.data,
+                fileUrl: response.headers['content-disposition'] ? null : response.data.url
+            }
         };
     } catch (error) {
         console.error('Error exporting payroll:', error);
         return {
             success: false,
-            message: error.response?.data?.message || 'Failed to export payroll data'
+            message: error.response?.data?.message || 'Không thể xuất bảng lương'
         };
     }
 };
@@ -124,11 +118,6 @@ export const exportPayroll = async (employeeId) => {
 // Tạo bảng lương mới (kiểm tra quyền admin/kế toán)
 export const createPayroll = async (payrollData) => {
     try {
-        const userRole = authService.getUserRole();
-        if (userRole !== 'Admin' && userRole !== 'Accountant') {
-            throw new Error('Unauthorized to create payroll');
-        }
-
         const response = await api.post('/api/payroll/create', payrollData);
         return {
             success: true,
@@ -159,3 +148,70 @@ export const deletePayroll = async (payrollId) => {
     }
 };
 
+// Fix: Cập nhật đường dẫn API update từ up-/:id thành update/:id
+export const updatePayroll = async (payrollId, payrollData) => {
+    try {
+        console.log(`Updating payroll #${payrollId} with data:`, payrollData);
+        
+        // Cải thiện logging cho debugging
+        if (!payrollId) {
+            console.error('Error: No payroll ID provided');
+            return {
+                success: false,
+                message: 'Không có ID bảng lương để cập nhật'
+            };
+        }
+        
+        // Kiểm tra quyền
+        const userRole = authService.getUserRole();
+        if (userRole !== 'Admin' && userRole !== 'Accountant') {
+            console.error('Error: User not authorized', {role: userRole});
+            return {
+                success: false,
+                message: 'Bạn không có quyền cập nhật bảng lương'
+            };
+        }
+
+        // Đảm bảo API endpoint đúng
+        // Lưu ý: Nếu đã có proxy trong package.json, bạn không cần baseURL đầy đủ
+        const url = `/api/payroll/update/${payrollId}`;
+        console.log('Request URL:', url);
+        
+        // Gửi request
+        const response = await api.put(url, payrollData);
+        console.log('API response:', response.data);
+        
+        return {
+            success: true,
+            data: response.data.payroll || response.data
+        };
+    } catch (error) {
+        console.error('Error updating payroll:', error);
+        
+        // Xử lý chi tiết từng loại lỗi
+        let errorMessage = 'Failed to update payroll';
+        
+        if (error.response) {
+            console.error('Response error details:', {
+                status: error.response.status,
+                statusText: error.response.statusText,
+                data: error.response.data
+            });
+            
+            // Lấy message lỗi từ API nếu có
+            errorMessage = error.response.data?.message || 
+                          `Server responded with error: ${error.response.status} ${error.response.statusText}`;
+        } else if (error.request) {
+            // Request đã gửi nhưng không nhận được response
+            errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
+        } else {
+            // Lỗi khác
+            errorMessage = error.message || 'Đã xảy ra lỗi không xác định';
+        }
+        
+        return {
+            success: false,
+            message: errorMessage
+        };
+    }
+};

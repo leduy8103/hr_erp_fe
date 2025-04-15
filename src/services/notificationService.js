@@ -4,8 +4,7 @@ import authService from './authService';
 const notificationService = {
   getNotifications: async () => {
     const token = authService.getToken();
-    const userId = authService.getUserIdFromToken();
-    const response = await api.get(`/api/user/${userId}/notifications`, {
+    const response = await api.get('/api/notifications', {
       headers: {
         Authorization: `Bearer ${token}`
       }

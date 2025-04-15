@@ -53,18 +53,6 @@ const deleteTask = async (id, token) => {
   return response.data;
 };
 
-const getTaskComments = async (taskId, token) => {
-  const response = await api.get(`${API_URL}/${taskId}/comments`, getAuthHeaders(token));
-  return response.data;
-};
-
-const addTaskComment = async (taskId, commentData, token) => {
-  const response = await api.post(`${API_URL}/${taskId}/comments`, commentData, getAuthHeaders(token));
-  return response.data;
-};
-
-// Add other task-related API calls as needed
-
 export default {
   createTask,
   assignTask,
@@ -74,7 +62,5 @@ export default {
   getTaskById,
   getTasksByProject,
   getTasksByUser,
-  deleteTask,
-  getTaskComments,
-  addTaskComment
+  deleteTask
 };

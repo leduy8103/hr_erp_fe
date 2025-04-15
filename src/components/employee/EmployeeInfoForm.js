@@ -75,23 +75,6 @@ const EmployeeInfoForm = ({ formData, onChange }) => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-            <select 
-              name="department"
-              value={formData.department}
-              onChange={onChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Select Department</option>
-              {departments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
             <select 
               name="position"
@@ -107,8 +90,25 @@ const EmployeeInfoForm = ({ formData, onChange }) => {
               ))}
             </select>
           </div>
-          
+
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+            <select 
+              name="department"
+              value={formData.department}
+              onChange={onChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Select Department</option>
+              {departments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Hire Date</label>
             <input 
               type="date" 
@@ -118,60 +118,6 @@ const EmployeeInfoForm = ({ formData, onChange }) => {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
             />
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select 
-              name="status"
-              value={formData.status}
-              onChange={onChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Select Status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-              <option value="Resigned">Resigned</option>
-            </select>
-          </div>
-          
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Work Type</label>
-            <div className="flex space-x-4 mt-2">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="workType"
-                  value="Office"
-                  checked={formData.workType === 'Office'}
-                  onChange={onChange}
-                  className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                />
-                <span className="ml-2 text-sm text-gray-700">Office</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="workType"
-                  value="Remote"
-                  checked={formData.workType === 'Remote'}
-                  onChange={onChange}
-                  className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                />
-                <span className="ml-2 text-sm text-gray-700">Remote</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="workType"
-                  value="Hybrid"
-                  checked={formData.workType === 'Hybrid'}
-                  onChange={onChange}
-                  className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                />
-                <span className="ml-2 text-sm text-gray-700">Hybrid</span>
-              </label>
-            </div>
-          </div> */}
         </div>
       </div>
     </div>
